@@ -23,7 +23,8 @@ load_dotenv()
 
 # -------------------- КОНФИГУРАЦИЯ --------------------
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-ADMIN_IDS = list(map(int, os.getenv("ADMIN_IDS", "").split(",")))
+admin_ids_str = os.getenv("ADMIN_IDS", "")
+ADMIN_IDS = [int(x.strip()) for x in admin_ids_str.split(",") if x.strip()] if admin_ids_str else []
 YOOMONEY_ACCESS_TOKEN = os.getenv("YOOMONEY_ACCESS_TOKEN")
 YOOMONEY_WALLET = os.getenv("YOOMONEY_WALLET")
 
