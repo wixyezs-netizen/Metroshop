@@ -44,57 +44,57 @@ DB_NAME = 'metro_shop.db'
 PRICES = {
     # Сопровождение по картам (премиум)
     'escort_map5': {
-        'name': '🤩 Сопровождение Карта 5',
+        'name': '👑 Сопровождение Карта 5',
         'price': 350,
-        'emoji': '⚡',
+        'emoji': '🔥',
         'kills': '6-7',
-        'loot': 'Весь лут с типов ваш!',
-        'gear': '👍👍👍👍'
+        'loot': 'Весь лут твой!',
+        'gear': '💎💎💎💎'
     },
     'escort_map7': {
-        'name': '🤩 Сопровождение Карта 7',
+        'name': '👑 Сопровождение Карта 7',
         'price': 450,
-        'emoji': '⚡',
+        'emoji': '🔥',
         'kills': '10-15',
-        'loot': 'Весь лут с типов ваш!',
-        'gear': '👍👍👍👍'
+        'loot': 'Весь лут твой!',
+        'gear': '💎💎💎💎'
     },
     'escort_map8_basic': {
-        'name': '🤩 Сопровождение Карта 8 (Базовый)',
+        'name': '👑 Сопровождение Карта 8 (Базовый)',
         'price': 850,
-        'emoji': '⚡',
+        'emoji': '🔥',
         'kills': '12+',
         'tickets': '5-8',
-        'loot': 'Весь лут с типов!',
-        'gear': '👍👍👍👍'
+        'loot': 'Весь лут твой!',
+        'gear': '💎💎💎💎'
     },
     'escort_map8_premium': {
-        'name': '🤩 Сопровождение Карта 8 (Премиум)',
+        'name': '👑 Сопровождение Карта 8 (Премиум)',
         'price': 1300,
-        'emoji': '⚡',
+        'emoji': '💎',
         'kills': '18+',
         'tickets': '8-12',
-        'loot': 'Весь лут с типов!',
-        'gear': '👍👍👍👍'
+        'loot': 'Весь лут твой!',
+        'gear': '💎💎💎💎💎'
     },
     
     # Сопроводы с экипировкой (бюджетные)
     'escort_80': {
-        'name': '🤗 Сопровод 80₽',
+        'name': '🎮 Сопровод 80₽',
         'price': 80,
-        'emoji': '🚇',
+        'emoji': '⚡',
         'includes': '🪖🧥🎒'
     },
     'escort_100': {
-        'name': '🤗 Сопровод 100₽',
+        'name': '🎮 Сопровод 100₽',
         'price': 100,
-        'emoji': '🚇',
+        'emoji': '⚡',
         'includes': '🪖🧥🎒'
     },
     'escort_120': {
-        'name': '🤗 Сопровод 120₽',
+        'name': '🎮 Сопровод 120₽',
         'price': 120,
-        'emoji': '🚇',
+        'emoji': '⚡',
         'includes': '🪖🧥🎒'
     },
     
@@ -102,7 +102,7 @@ PRICES = {
     'mk_tower': {
         'name': 'МК вышка',
         'price': 30,
-        'emoji': '🔥'
+        'emoji': '🚀'
     },
 }
 
@@ -302,15 +302,15 @@ async def get_stats():
 
 def get_main_menu():
     keyboard = [
-        [InlineKeyboardButton("⚡ Премиум сопровождение", callback_data="premium_escorts")],
-        [InlineKeyboardButton("🚇 Бюджетные сопроводы", callback_data="budget_escorts")],
-        [InlineKeyboardButton("🔥 Дополнительные услуги", callback_data="extra_services")],
+        [InlineKeyboardButton("🔥 Премиум сопровождение", callback_data="premium_escorts")],
+        [InlineKeyboardButton("⚡ Бюджетные сопроводы", callback_data="budget_escorts")],
+        [InlineKeyboardButton("🚀 Доп. услуги", callback_data="extra_services")],
         [
-            InlineKeyboardButton("💼 Мои заказы", callback_data="my_orders"),
-            InlineKeyboardButton("ℹ️ О нас", callback_data="about")
+            InlineKeyboardButton("🎁 Мои заказы", callback_data="my_orders"),
+            InlineKeyboardButton("💎 Инфо", callback_data="about")
         ],
         [
-            InlineKeyboardButton("❓ FAQ", callback_data="faq"),
+            InlineKeyboardButton("🎯 FAQ", callback_data="faq"),
             InlineKeyboardButton("💬 Поддержка", callback_data="support")
         ]
     ]
@@ -318,40 +318,40 @@ def get_main_menu():
 
 def get_premium_escorts_menu():
     keyboard = [
-        [InlineKeyboardButton("⚡ Карта 5 — 350₽", callback_data="escort_map5")],
-        [InlineKeyboardButton("⚡ Карта 7 — 450₽", callback_data="escort_map7")],
-        [InlineKeyboardButton("⚡ Карта 8 Базовый — 850₽", callback_data="escort_map8_basic")],
-        [InlineKeyboardButton("⚡ Карта 8 Премиум — 1,300₽", callback_data="escort_map8_premium")],
-        [InlineKeyboardButton("🔙 Назад", callback_data="main_menu")]
+        [InlineKeyboardButton("🔥 Карта 5 • 350₽", callback_data="escort_map5")],
+        [InlineKeyboardButton("🔥 Карта 7 • 450₽", callback_data="escort_map7")],
+        [InlineKeyboardButton("⚔️ Карта 8 Базовый • 850₽", callback_data="escort_map8_basic")],
+        [InlineKeyboardButton("👑 Карта 8 Премиум • 1,300₽", callback_data="escort_map8_premium")],
+        [InlineKeyboardButton("◀️ Назад", callback_data="main_menu")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
 def get_budget_escorts_menu():
     keyboard = [
-        [InlineKeyboardButton("🤗 Сопровод 80₽ (🪖🧥🎒)", callback_data="escort_80")],
-        [InlineKeyboardButton("🤗 Сопровод 100₽ (🪖🧥🎒)", callback_data="escort_100")],
-        [InlineKeyboardButton("🤗 Сопровод 120₽ (🪖🧥🎒)", callback_data="escort_120")],
-        [InlineKeyboardButton("🔙 Назад", callback_data="main_menu")]
+        [InlineKeyboardButton("⚡ Сопровод 80₽ 🪖🧥🎒", callback_data="escort_80")],
+        [InlineKeyboardButton("⚡ Сопровод 100₽ 🪖🧥🎒", callback_data="escort_100")],
+        [InlineKeyboardButton("⚡ Сопровод 120₽ 🪖🧥🎒", callback_data="escort_120")],
+        [InlineKeyboardButton("◀️ Назад", callback_data="main_menu")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
 def get_extra_menu():
     keyboard = [
-        [InlineKeyboardButton("🔥 МК вышка — 30₽", callback_data="mk_tower")],
+        [InlineKeyboardButton("🚀 МК вышка • 30₽", callback_data="mk_tower")],
         [InlineKeyboardButton("💬 Другие услуги (ЛС)", url="https://t.me/MetroShopSupport")],
-        [InlineKeyboardButton("🔙 Назад", callback_data="main_menu")]
+        [InlineKeyboardButton("◀️ Назад", callback_data="main_menu")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
 def get_back_button():
-    keyboard = [[InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]]
+    keyboard = [[InlineKeyboardButton("◀️ На главную", callback_data="main_menu")]]
     return InlineKeyboardMarkup(keyboard)
 
 def get_payment_menu(order_id: str):
     keyboard = [
         [InlineKeyboardButton("🔄 Проверить оплату", callback_data=f"check_payment_{order_id}")],
-        [InlineKeyboardButton("❌ Отменить заказ", callback_data=f"cancel_order_{order_id}")],
-        [InlineKeyboardButton("🔙 Главное меню", callback_data="main_menu")]
+        [InlineKeyboardButton("❌ Отменить", callback_data=f"cancel_order_{order_id}")],
+        [InlineKeyboardButton("◀️ На главную", callback_data="main_menu")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
@@ -364,240 +364,259 @@ def get_admin_order_menu(order_id: str):
 # ======================== ТЕКСТЫ ========================
 
 WELCOME_TEXT = """
-⚡⚡⚡⚡⚡⚡
-🤩 <b>Metro Shop</b> 🤩
-⚡⚡⚡⚡⚡⚡
+💎━━━━━━━━━━━━━━━💎
+    🎮 <b>METRO SHOP</b> 🎮
+💎━━━━━━━━━━━━━━━💎
 
-🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋
-➖➖➖➖➖➖➖➖➖➖➖
+🔥 <b>Профи услуги Metro Royale</b>
 
-<b>🚇 Профессиональные услуги Metro Royale</b>
+━━━━━━━━━━━━━━━━━━━
 
 ✨ <b>Что мы предлагаем:</b>
 
-⚡ <b>Премиум сопровождение</b>
-├ Карта 5, 7, 8
-├ Гарантия выноса
-├ Весь лут ваш
-└ От 350₽
+👑 <b>Премиум сопровождение</b>
+  ├ Карта 5, 7, 8
+  ├ Гарант выносов 💯
+  └ Весь лут твой 💎
 
-🤗 <b>Бюджетные сопроводы</b>
-├ С экипировкой 🪖🧥🎒
-├ Быстрое выполнение
-└ От 80₽
+⚡ <b>Бюджетные сопроводы</b>
+  ├ С экипировкой 🪖🧥🎒
+  ├ Быстро и недорого
+  └ От 80₽ 🚀
 
-🔥 <b>Дополнительные услуги</b>
-└ МК вышка и другое
+🚀 <b>Доп. услуги</b>
+  └ МК вышка и другое
 
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 
-💎 <b>Преимущества:</b>
-├ ⚡ Опытные игроки
-├ 🛡️ Гарантия результата
-├ 💰 Честные цены
-└ 💬 Поддержка 24/7
+💪 <b>Почему мы?</b>
+  ├ 🏆 Опытные игроки
+  ├ ⚡ Быстрое выполнение
+  ├ 💰 Честные цены
+  ├ 🛡️ Гарантия результата
+  └ 🤝 Надежная сделка
 
-🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 
-📱 <b>Выберите услугу ниже!</b> 👇
+👇 <b>Выбери услугу ниже 🎯</b>
 """
 
 PREMIUM_ESCORTS_TEXT = """
-⚡⚡⚡⚡⚡⚡
-🤩 <b>Премиум сопровождение</b> 🤩
-⚡⚡⚡⚡⚡⚡
+💎━━━━━━━━━━━━━━━💎
+   🔥 <b>ПРЕМИУМ СОПРОВОД</b>
+💎━━━━━━━━━━━━━━━💎
 
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 
-<b>⚡ Карта 5</b> — 350₽
-├ 🤗 Что даю: 👍👍👍👍
-├ 🤗 Гарант выноса: 6-7⚡⚡
-└ 🌟 Шмотки: Весь лут с типов ваш!
+<b>🔥 КАРТА 5</b> • 350₽
+  ├ 💎 Качество: ★★★★
+  ├ 🎯 Выносов: 6-7
+  ├ 💪 Весь лут твой!
+  └ ⚡ Быстро и четко
 
-<b>⚡ Карта 7</b> — 450₽
-├ 🤗 Что даю: 👍👍👍👍
-├ 🤗 Гарант выноса: 10-15⚡⚡
-└ 🌟 Шмотки: Весь лут с типов ваш!
+<b>🔥 КАРТА 7</b> • 450₽
+  ├ 💎 Качество: ★★★★
+  ├ 🎯 Выносов: 10-15
+  ├ 💪 Весь лут твой!
+  └ ⚡ Топ результат
 
-<b>⚡ Карта 8 (Базовый)</b> — 850₽
-├ 🤗 Что даю: 👍👍👍👍
-├ 🤗 Гарант выноса: 12+⚡⚡
-├ 🤗 Билеты: 5-8⚡⚡
-└ 🌟 Шмотки: Весь лут с типов!
+<b>⚔️ КАРТА 8 (БАЗОВЫЙ)</b> • 850₽
+  ├ 💎 Качество: ★★★★
+  ├ 🎯 Выносов: 12+
+  ├ 🎁 Билеты: 5-8
+  ├ 💪 Весь лут твой!
+  └ 🛡️ Гарантия
 
-<b>⚡ Карта 8 (Премиум)</b> — 1,300₽
-├ 🤗 Что даю: 👍👍👍👍
-├ 🤗 Гарант выноса: 18+⚡⚡
-├ 🤗 Билеты: 8-12⚡⚡
-└ 🌟 Шмотки: Весь лут с типов!
+<b>👑 КАРТА 8 (ПРЕМИУМ)</b> • 1,300₽
+  ├ 💎 Качество: ★★★★★
+  ├ 🎯 Выносов: 18+
+  ├ 🎁 Билеты: 8-12
+  ├ 💪 Весь лут твой!
+  └ 🏆 Максимальный фарм
 
-➖➖➖➖➖➖➖➖➖➖➖
-🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋
+━━━━━━━━━━━━━━━━━━━
 
-<i>Выберите карту для сопровождения</i> 👇
+🔥 <i>Выбери свою карту 👇</i>
 """
 
 BUDGET_ESCORTS_TEXT = """
-🤩⚡⚡⚡⚡⚡⚡🤩
+⚡━━━━━━━━━━━━━━━⚡
+   🎮 <b>БЮДЖЕТ СОПРОВОД</b>
+⚡━━━━━━━━━━━━━━━⚡
 
-🤩⚡⚡⚡ ⚡⚡⚡⚡🤩
-🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋
-➖➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 
-<b>🚇 Бюджетные сопроводы</b>
+<b>⚡ СОПРОВОД • 80₽</b>
+  ├ Включено: 🪖 🧥 🎒
+  ├ 🚀 Быстро
+  └ 💯 Надежно
 
-🤗➖⚡⚡⚡ <b>💜 80 руб</b>
-└ Входит: 🪖🧥🎒
+<b>⚡ СОПРОВОД • 100₽</b>
+  ├ Включено: 🪖 🧥 🎒
+  ├ 🚀 Быстро
+  └ 💯 Надежно
 
-🤗➖⚡⚡⚡ <b>💜 100 руб</b>
-└ Входит: 🪖🧥🎒
+<b>⚡ СОПРОВОД • 120₽</b>
+  ├ Включено: 🪖 🧥 🎒
+  ├ 🚀 Быстро
+  └ 💯 Надежно
 
-🤗➖⚡⚡⚡ <b>💜 120 руб</b>
-└ Входит: 🪖🧥🎒
+━━━━━━━━━━━━━━━━━━━
 
-➖➖➖➖➖➖➖➖➖➖➖➖
-🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋
+✨ <b>В комплекте:</b>
+  ├ 🪖 Шлем
+  ├ 🧥 Бронежилет
+  └ 🎒 Рюкзак
 
-✨ <b>В стоимость включена:</b>
-├ 🪖 Шлем
-├ 🧥 Бронежилет
-└ 🎒 Рюкзак
+💪 <b>Быстро и недорого!</b>
 
-⚡ <b>Быстрое выполнение!</b>
+━━━━━━━━━━━━━━━━━━━
 
-<i>Выберите нужный сопровод</i> 👇
+👇 <i>Выбери свой пакет 🎯</i>
 """
 
 EXTRA_TEXT = """
-🤩⚡⚡⚡⚡⚡⚡🤩
+🚀━━━━━━━━━━━━━━━🚀
+    ⚡ <b>ДОП. УСЛУГИ</b>
+🚀━━━━━━━━━━━━━━━🚀
 
-<b>🔥 Дополнительные услуги</b>
+━━━━━━━━━━━━━━━━━━━
 
-➖➖➖➖➖➖➖➖➖➖➖
+<b>🚀 МК ВЫШКА</b> • 30₽
+  ├ ⚡ Быстрое выполнение
+  ├ 🎯 Профессионалы
+  ├ 💯 Гарантия результата
+  └ 🔥 Топ качество
 
-<b>🔥 МК вышка</b> — 30₽
-├ Быстрое выполнение
-├ Профессиональная помощь
-└ Гарантия результата
+━━━━━━━━━━━━━━━━━━━
 
-➖➖➖➖➖➖➖➖➖➖➖
+💬 <b>ИНДИВИДУАЛЬНЫЕ ЗАКАЗЫ</b>
 
-💬 <b>За другими вещами обращаться в ЛС</b>
+Нужно что-то особенное?
+Пиши в ЛС — обсудим! 🤝
 
-➖➖➖➖➖➖➖➖➖➖➖
-🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋
+━━━━━━━━━━━━━━━━━━━
 
-<i>Выберите услугу или напишите в поддержку</i> 👇
+👇 <i>Выбери услугу 🎯</i>
 """
 
 ABOUT_TEXT = """
-⚡⚡⚡⚡⚡⚡
-🤩 <b>О Metro Shop</b> 🤩
-⚡⚡⚡⚡⚡⚡
+💎━━━━━━━━━━━━━━━💎
+     ✨ <b>О НАС</b> ✨
+💎━━━━━━━━━━━━━━━💎
 
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 
-🏪 <b>Metro Shop</b> — профессиональный сервис для Metro Royale
+🎮 <b>METRO SHOP</b>
+Твой проводник в Metro Royale 🚀
 
-🚇 <b>Metro Royale</b> — это:
-├ 🗺️ Уникальные карты (5, 7, 8)
-├ 💼 Ценный лут и экипировка
-├ ⚔️ Опасные зоны и противники
-├ 🚁 Эвакуация с добычей
-└ 💰 Награды и билеты
+━━━━━━━━━━━━━━━━━━━
 
-✅ <b>Наши гарантии:</b>
-├ 🔐 Безопасность аккаунта
-├ ⚡ Опытные и проверенные игроки
-├ 💬 Поддержка 24/7
-├ 💸 Честные рыночные цены
-├ 🛡️ Гарантия выноса
-└ 🔄 Возврат при проблемах
+🔥 <b>METRO ROYALE — ЭТО:</b>
+  ├ 🗺️ Уникальные карты
+  ├ 💎 Ценный лут
+  ├ ⚔️ Опасные зоны
+  ├ 🛡️ Эвакуация
+  └ 🎁 Награды
 
-📊 <b>Статистика:</b>
-├ 👥 3000+ довольных клиентов
-├ ⭐ Рейтинг 4.9/5
-├ 🏆 1000+ успешных сопроводов
-└ 📈 Работаем с 2021 года
+━━━━━━━━━━━━━━━━━━━
 
-➖➖➖➖➖➖➖➖➖➖➖
-🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋
+✅ <b>НАШИ ГАРАНТИИ:</b>
+  ├ 🛡️ Безопасность 💯
+  ├ 💪 Опытные игроки
+  ├ 💬 Поддержка 24/7
+  ├ 💰 Честные цены
+  ├ 🤝 Надежная сделка
+  └ 🔄 Возврат средств
 
-💬 <b>Остались вопросы? Обращайтесь в поддержку!</b>
+━━━━━━━━━━━━━━━━━━━
+
+📊 <b>СТАТИСТИКА:</b>
+  ├ 👥 3000+ клиентов
+  ├ ⭐ Рейтинг 4.9/5
+  ├ 🏆 1000+ сопроводов
+  └ 🚀 С 2021 года
+
+━━━━━━━━━━━━━━━━━━━
+
+💬 <i>Вопросы? Пиши! 🎯</i>
 """
 
 FAQ_TEXT = """
-⚡⚡⚡⚡⚡⚡
-🤩 <b>Частые вопросы</b> 🤩
-⚡⚡⚡⚡⚡⚡
+🎯━━━━━━━━━━━━━━━🎯
+      ❓ <b>FAQ</b>
+🎯━━━━━━━━━━━━━━━🎯
 
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 
 <b>Q: Что такое Metro Royale?</b>
-A: 🚇 Это PvE/PvP режим в PUBG Mobile где нужно собирать лут, выносить противников и эвакуироваться с добычей.
+<b>A:</b> 🎮 PvE/PvP режим с лутом и эвакуацией 🚀
 
-<b>Q: Что входит в премиум сопровождение?</b>
-A: ⚡ Опытный игрок, гарантия выноса противников (от 6 до 18+), весь лут с типов остается вам, билеты (на карте 8).
+<b>Q: Что входит в премиум?</b>
+<b>A:</b> 👑 Опытный игрок + гарант выносов + весь лут твой 💎
 
-<b>Q: Чем отличается бюджетный сопровод?</b>
-A: 🤗 Это быстрое прохождение с базовой экипировкой (шлем, броня, рюкзак). Отлично для новичков!
+<b>Q: Чем отличается бюджет?</b>
+<b>A:</b> ⚡ Быстро + базовая экипировка 🪖🧥🎒
 
-<b>Q: Что значит "гарант выноса"?</b>
-A: 🎯 Это гарантированное количество убитых противников за рейд. Больше выносов = больше лута!
+<b>Q: Гарант выноса — что это?</b>
+<b>A:</b> 🎯 Гарантированное число киллов = больше лута! 💰
 
 <b>Q: Как делится лут?</b>
-A: 💎 При премиум сопровождении весь лут с противников ваш! При бюджетном - стандартное деление.
+<b>A:</b> 💎 Премиум — всё твоё! Бюджет — стандарт 🤝
 
-<b>Q: Сколько времени занимает?</b>
-A: ⏱️ Одна игра 10-25 минут в зависимости от карты.
+<b>Q: Сколько времени?</b>
+<b>A:</b> ⏱️ 10-25 минут на игру ⚡
 
-<b>Q: Безопасно ли?</b>
-A: 🛡️ Да! Мы играем вместе с вами по приглашению, пароль не нужен.
+<b>Q: Это безопасно?</b>
+<b>A:</b> 🛡️ Да! Играем вместе, пароль не нужен 💯
 
 <b>Q: Способы оплаты?</b>
-A: 💳 ЮMoney с автоматической проверкой платежа.
+<b>A:</b> 💳 ЮMoney (автопроверка) 🚀
 
-<b>Q: Что такое "билеты"?</b>
-A: 🎫 Это специальная валюта Metro Royale, которую можно обменять на ценные предметы.
+<b>Q: Что такое билеты?</b>
+<b>A:</b> 🎁 Валюта Metro для обмена на предметы 💎
 
 <b>Q: Гарантия возврата?</b>
-A: 💯 Да! Полный возврат если услуга не выполнена.
+<b>A:</b> 💯 Да! 100% возврат при проблемах 🤝
 
-➖➖➖➖➖➖➖➖➖➖➖
-🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋
+━━━━━━━━━━━━━━━━━━━
 
-💬 <b>Не нашли ответ? Напишите в поддержку!</b>
+💬 <i>Еще вопросы? Пиши! 🎯</i>
 """
 
 SUPPORT_TEXT = """
-⚡⚡⚡⚡⚡⚡
-🤩 <b>Поддержка</b> 🤩
-⚡⚡⚡⚡⚡⚡
+💬━━━━━━━━━━━━━━━💬
+    🆘 <b>ПОДДЕРЖКА</b>
+💬━━━━━━━━━━━━━━━💬
 
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 
-👨‍💼 <b>Операторы онлайн 24/7!</b>
+👨‍💼 <b>МЫ ОНЛАЙН 24/7!</b> ⚡
 
-📱 <b>Контакты:</b>
-├ 💬 Telegram: @MetroShopSupport
-├ 📧 Email: support@metroshop.ru
-└ ⚡ Ответ до 15 минут
+━━━━━━━━━━━━━━━━━━━
 
-❓ <b>По каким вопросам обращаться:</b>
-├ 💰 Проблемы с оплатой
-├ ⏱️ Статус заказа
-├ 🔧 Технические вопросы
-├ 💎 Консультация по услугам
-├ 🎁 Индивидуальные заказы
-└ 📝 Жалобы и предложения
+📱 <b>КОНТАКТЫ:</b>
+  ├ 💬 TG: @MetroShopSupport
+  ├ 📧 Email: support@metroshop.ru
+  └ ⚡ Ответ: до 15 мин 🚀
 
-🔥 <b>За другими вещами обращаться в ЛС!</b>
+━━━━━━━━━━━━━━━━━━━
 
-➖➖➖➖➖➖➖➖➖➖➖
-🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋
+🎯 <b>МОЖЕМ ПОМОЧЬ С:</b>
+  ├ 💰 Проблемы с оплатой
+  ├ ⏱️ Статус заказа
+  ├ 🔧 Техподдержка
+  ├ 💎 Консультации
+  ├ 🎁 Индивидуальные заказы
+  └ 📝 Жалобы и предложения
 
-<b>Мы всегда рады помочь!</b> 💬
+━━━━━━━━━━━━━━━━━━━
+
+🔥 <b>ЗА ДРУГИМИ ВЕЩАМИ — В ЛС!</b>
+
+━━━━━━━━━━━━━━━━━━━
+
+💪 <i>Всегда рады помочь! 🤝</i>
 """
 
 user_data_storage = {}
@@ -611,29 +630,31 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = """
-⚡⚡⚡⚡⚡⚡
-🤩 <b>Помощь</b> 🤩
-⚡⚡⚡⚡⚡⚡
+🎯━━━━━━━━━━━━━━━🎯
+     🆘 <b>ПОМОЩЬ</b>
+🎯━━━━━━━━━━━━━━━🎯
 
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 
-📱 <b>Команды бота:</b>
-├ /start — Главное меню
-├ /help — Справка
-├ /orders — Мои заказы
-└ /stats — Статистика (admin)
+📱 <b>КОМАНДЫ:</b>
+  ├ /start — Главное меню 🏠
+  ├ /help — Справка 🆘
+  ├ /orders — Мои заказы 🎁
+  └ /stats — Статистика (admin) 📊
 
-🛍️ <b>Как сделать заказ:</b>
-1️⃣ Выберите услугу
-2️⃣ Введите PUBG ID
-3️⃣ Оплатите через ЮMoney
-4️⃣ Проверьте оплату в боте
-5️⃣ Получите услугу!
+━━━━━━━━━━━━━━━━━━━
 
-➖➖➖➖➖➖➖➖➖➖➖
+🛍️ <b>КАК ЗАКАЗАТЬ:</b>
+  1️⃣ Выбери услугу 🎯
+  2️⃣ Введи PUBG ID 🎮
+  3️⃣ Оплати через ЮMoney 💳
+  4️⃣ Проверь оплату в боте 🔄
+  5️⃣ Получи услугу! 🎁
+
+━━━━━━━━━━━━━━━━━━━
 
 💬 Поддержка: @MetroShopSupport
-⚡ Работаем 24/7!
+⚡ Онлайн 24/7! 🚀
 """
     await update.message.reply_text(text, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
 
@@ -643,43 +664,43 @@ async def orders_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if not orders:
         text = """
-⚡⚡⚡⚡⚡⚡
-🤩 <b>Мои заказы</b> 🤩
-⚡⚡⚡⚡⚡⚡
+🎁━━━━━━━━━━━━━━━🎁
+    📦 <b>МОИ ЗАКАЗЫ</b>
+🎁━━━━━━━━━━━━━━━🎁
 
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 
-📭 У вас пока нет заказов.
+📭 У тебя пока нет заказов
 
-Оформите первый заказ через главное меню! 🎮
+Оформи первый заказ! 🚀
 
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 """
     else:
         text = """
-⚡⚡⚡⚡⚡⚡
-🤩 <b>Ваши заказы</b> 🤩
-⚡⚡⚡⚡⚡⚡
+🎁━━━━━━━━━━━━━━━🎁
+    📦 <b>МОИ ЗАКАЗЫ</b>
+🎁━━━━━━━━━━━━━━━🎁
 
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 
 """
         for order in orders:
             status_emoji = {
                 'awaiting_payment': '⏳',
                 'paid': '✅',
-                'completed': '✅',
+                'completed': '🏆',
                 'cancelled': '❌'
             }.get(order['status'], '❓')
             
             text += f"""
-🔖 <b>#{order['order_id']}</b>
-├ 📦 {order['item_name']}
-├ 💰 {order['price']}₽
-└ 📊 {status_emoji}
+<b>🔖 #{order['order_id']}</b>
+  ├ 📦 {order['item_name']}
+  ├ 💰 {order['price']}₽
+  └ {status_emoji}
 
 """
-        text += "➖➖➖➖➖➖➖➖➖➖➖"
+        text += "━━━━━━━━━━━━━━━━━━━"
     
     await update.message.reply_text(text, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
 
@@ -689,11 +710,11 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     stats = await get_stats()
     text = f"""
-⚡⚡⚡⚡⚡⚡
-🤩 <b>Статистика</b> 🤩
-⚡⚡⚡⚡⚡⚡
+📊━━━━━━━━━━━━━━━📊
+   🏆 <b>СТАТИСТИКА</b>
+📊━━━━━━━━━━━━━━━📊
 
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 
 👥 Пользователей: {stats['total_users']}
 📦 Всего заказов: {stats['total_orders']}
@@ -701,7 +722,7 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 💰 Выручка: {stats['total_revenue']:.2f}₽
 📅 Сегодня: {stats['today_orders']}
 
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 """
     await update.message.reply_text(text, parse_mode=ParseMode.HTML)
 
@@ -733,7 +754,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == "support":
         keyboard = [
             [InlineKeyboardButton("💬 Написать оператору", url="https://t.me/MetroShopSupport")],
-            [InlineKeyboardButton("🔙 Назад", callback_data="main_menu")]
+            [InlineKeyboardButton("◀️ Назад", callback_data="main_menu")]
         ]
         await query.edit_message_text(SUPPORT_TEXT, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.HTML)
     
@@ -741,28 +762,28 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         orders = await get_user_orders(user_id, 5)
         if not orders:
             text = """
-⚡⚡⚡⚡⚡⚡
-🤩 <b>Мои заказы</b> 🤩
-⚡⚡⚡⚡⚡⚡
+🎁━━━━━━━━━━━━━━━🎁
+    📦 <b>МОИ ЗАКАЗЫ</b>
+🎁━━━━━━━━━━━━━━━🎁
 
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 
-📭 У вас пока нет заказов.
+📭 У тебя пока нет заказов
 
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 """
         else:
             text = """
-⚡⚡⚡⚡⚡⚡
-🤩 <b>Ваши заказы</b> 🤩
-⚡⚡⚡⚡⚡⚡
+🎁━━━━━━━━━━━━━━━🎁
+    📦 <b>МОИ ЗАКАЗЫ</b>
+🎁━━━━━━━━━━━━━━━🎁
 
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 
 """
             for order in orders:
-                text += f"🔖 #{order['order_id']}\n├ {order['item_name']}\n└ {order['price']}₽\n\n"
-            text += "➖➖➖➖➖➖➖➖➖➖➖"
+                text += f"<b>🔖 #{order['order_id']}</b>\n  ├ {order['item_name']}\n  └ {order['price']}₽\n\n"
+            text += "━━━━━━━━━━━━━━━━━━━"
         
         await query.edit_message_text(text, parse_mode=ParseMode.HTML, reply_markup=get_back_button())
     
@@ -773,44 +794,45 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Формируем описание товара
         description_parts = []
         if 'gear' in item:
-            description_parts.append(f"├ 🤗 Что даю: {item['gear']}")
+            description_parts.append(f"  ├ 💎 Качество: {item['gear']}")
         if 'kills' in item:
-            description_parts.append(f"├ 🤗 Гарант выноса: {item['kills']}⚡⚡")
+            description_parts.append(f"  ├ 🎯 Выносов: {item['kills']}")
         if 'tickets' in item:
-            description_parts.append(f"├ 🤗 Билеты: {item['tickets']}⚡⚡")
+            description_parts.append(f"  ├ 🎁 Билеты: {item['tickets']}")
         if 'loot' in item:
-            description_parts.append(f"└ 🌟 Шмотки: {item['loot']}")
+            description_parts.append(f"  └ 💪 Лут: {item['loot']}")
         if 'includes' in item:
-            description_parts.append(f"└ Входит: {item['includes']}")
+            description_parts.append(f"  └ ✨ Включено: {item['includes']}")
         
         description = "\n".join(description_parts) if description_parts else ""
         
         text = f"""
-⚡⚡⚡⚡⚡⚡
-🤩 <b>Подтверждение заказа</b> 🤩
-⚡⚡⚡⚡⚡⚡
+{item['emoji']}━━━━━━━━━━━━━━━{item['emoji']}
+  🤝 <b>ПОДТВЕРЖДЕНИЕ</b>
+{item['emoji']}━━━━━━━━━━━━━━━{item['emoji']}
 
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 
-{item['emoji']} <b>{item['name']}</b>
-💰 <b>Цена:</b> {item['price']}₽
+<b>{item['name']}</b>
+💰 Цена: {item['price']}₽
 
 {description}
 
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 
-⚠️ <b>ВАЖНО: Введите ваш PUBG ID</b>
+🎯 <b>ВВЕДИ СВОЙ PUBG ID</b>
 
-Отправьте ID вашего аккаунта PUBG Mobile следующим сообщением.
+Отправь ID своего аккаунта
+PUBG Mobile следующим сообщением
 
-📍 <b>Где найти PUBG ID:</b>
-1. Откройте PUBG Mobile
-2. Нажмите на профиль
-3. ID под ником
+📍 <b>Где найти:</b>
+  1. Открой PUBG Mobile 🎮
+  2. Нажми на профиль 👤
+  3. ID под ником 🔍
 
 <i>Пример: 5123456789</i>
 
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 """
         
         await query.edit_message_text(
@@ -837,29 +859,33 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update_user_stats(user_id, order['price'])
                 
                 text = f"""
-⚡⚡⚡⚡⚡⚡
-🤩 <b>Платеж получен!</b> 🤩
-⚡⚡⚡⚡⚡⚡
+🏆━━━━━━━━━━━━━━━🏆
+   ✅ <b>ОПЛАТА ПОЛУЧЕНА!</b>
+🏆━━━━━━━━━━━━━━━🏆
 
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 
-🎉 Заказ #{order_id} успешно оплачен!
+🎉 Заказ #{order_id} оплачен! 💯
+
+━━━━━━━━━━━━━━━━━━━
 
 📦 <b>Услуга:</b> {order['item_name']}
 💰 <b>Сумма:</b> {amount}₽
-🆔 <b>PUBG ID:</b> {order['pubg_id']}
+🎮 <b>PUBG ID:</b> {order['pubg_id']}
 
-⏳ <b>Статус:</b> В обработке
+⚡ <b>Статус:</b> В обработке 🔄
 
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 
-Услуга будет выполнена в течение 10-30 минут!
-Мы уведомим вас когда всё будет готово.
+Услуга будет выполнена
+в течение 10-30 минут! ⏱️
+
+Мы уведомим тебя когда
+всё будет готово 🚀
 
 💬 Вопросы: @MetroShopSupport
 
-➖➖➖➖➖➖➖➖➖➖➖
-🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋
+━━━━━━━━━━━━━━━━━━━
 """
                 
                 await query.edit_message_text(text, parse_mode=ParseMode.HTML, reply_markup=get_back_button())
@@ -868,7 +894,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 for admin_id in ADMIN_IDS:
                     try:
                         admin_text = f"""
-🔔 <b>Новый оплаченный заказ!</b>
+🔔 <b>НОВЫЙ ОПЛАЧЕННЫЙ ЗАКАЗ!</b>
 
 📦 Заказ: #{order_id}
 👤 @{order['username'] or 'нет'}
@@ -877,7 +903,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 💰 Сумма: {order['price']}₽
 🎮 PUBG ID: {order['pubg_id']}
 
-⚡ Требуется выполнение!
+⚡ ТРЕБУЕТСЯ ВЫПОЛНЕНИЕ! 🚀
 """
                         await context.bot.send_message(
                             admin_id,
@@ -888,7 +914,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     except Exception as e:
                         logger.error(f"Ошибка отправки админу: {e}")
             else:
-                await query.answer("⏳ Платеж не найден. Попробуйте через минуту.", show_alert=True)
+                await query.answer("⏳ Платеж не найден. Попробуй через минуту.", show_alert=True)
         else:
             await query.answer("❌ API недоступен", show_alert=True)
     
@@ -898,15 +924,15 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         await query.edit_message_text(
             """
-⚡⚡⚡⚡⚡⚡
-🤩 <b>Заказ отменен</b> 🤩
-⚡⚡⚡⚡⚡⚡
+❌━━━━━━━━━━━━━━━❌
+    🚫 <b>ОТМЕНЕНО</b>
+❌━━━━━━━━━━━━━━━❌
 
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 
-❌ Ваш заказ был отменен.
+Твой заказ был отменен
 
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 """,
             reply_markup=get_main_menu(),
             parse_mode=ParseMode.HTML
@@ -921,32 +947,34 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         if order:
             await update_order_status(order_id, 'completed')
-            await query.edit_message_text(f"✅ Заказ #{order_id} выполнен и закрыт!")
+            await query.edit_message_text(f"✅ Заказ #{order_id} выполнен! 🏆")
             
             try:
                 await context.bot.send_message(
                     order['user_id'],
                     f"""
-⚡⚡⚡⚡⚡⚡
-🤩 <b>Заказ выполнен!</b> 🤩
-⚡⚡⚡⚡⚡⚡
+🏆━━━━━━━━━━━━━━━🏆
+   🎉 <b>ЗАКАЗ ВЫПОЛНЕН!</b>
+🏆━━━━━━━━━━━━━━━🏆
 
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 
-🎉 Ваш заказ #{order_id} успешно выполнен!
+Твой заказ #{order_id}
+успешно выполнен! 💯
+
+━━━━━━━━━━━━━━━━━━━
 
 📦 <b>Услуга:</b> {order['item_name']}
 🎮 <b>PUBG ID:</b> {order['pubg_id']}
 
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 
-Проверьте игру!
+Проверь игру! 🚀
 
-⭐ Спасибо за покупку!
-Будем рады видеть вас снова! 💜
+✨ Спасибо за покупку!
+Будем рады видеть снова! 🤝
 
-➖➖➖➖➖➖➖➖➖➖➖
-🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋
+━━━━━━━━━━━━━━━━━━━
 """,
                     parse_mode=ParseMode.HTML
                 )
@@ -964,19 +992,20 @@ async def handle_pubg_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not pubg_id.isdigit() or len(pubg_id) < 8:
         await update.message.reply_text(
             """
-⚡⚡⚡⚡⚡⚡
-🤩 <b>Ошибка!</b> 🤩
-⚡⚡⚡⚡⚡⚡
+❌━━━━━━━━━━━━━━━❌
+     🚫 <b>ОШИБКА!</b>
+❌━━━━━━━━━━━━━━━❌
 
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 
-❌ <b>Неверный формат PUBG ID</b>
+Неверный формат PUBG ID 🎯
 
-ID должен состоять только из цифр (минимум 8 символов).
+ID должен быть числом
+(минимум 8 цифр)
 
-<i>Пример правильного ID: 5123456789</i>
+<i>Пример: 5123456789</i>
 
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 """,
             parse_mode=ParseMode.HTML
         )
@@ -1004,51 +1033,52 @@ ID должен состоять только из цифр (минимум 8 с
     ) if yoomoney else f"https://yoomoney.ru/to/{YOOMONEY_WALLET}"
     
     text = f"""
-⚡⚡⚡⚡⚡⚡
-🤩 <b>Оплата заказа</b> 🤩
-⚡⚡⚡⚡⚡⚡
+💳━━━━━━━━━━━━━━━💳
+    💰 <b>ОПЛАТА</b>
+💳━━━━━━━━━━━━━━━💳
 
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 
-💳 <b>Заказ #{order_id}</b>
+<b>🔖 ЗАКАЗ #{order_id}</b>
 
-📦 <b>Услуга:</b> {item['name']}
-🆔 <b>PUBG ID:</b> {pubg_id}
-💰 <b>К оплате:</b> {item['price']}₽
+📦 Услуга: {item['name']}
+🎮 PUBG ID: {pubg_id}
+💰 К оплате: {item['price']}₽
 
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 
-🏷️ <b>Метка платежа (обязательно!):</b>
+🏷️ <b>МЕТКА ПЛАТЕЖА:</b>
 <code>{payment_label}</code>
 
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 
-📝 <b>Инструкция по оплате:</b>
+🎯 <b>КАК ОПЛАТИТЬ:</b>
 
-1️⃣ Нажмите "Перейти к оплате"
-2️⃣ Выберите удобный способ оплаты
-3️⃣ Оплатите точную сумму: {item['price']}₽
-4️⃣ В комментарии укажите: <code>{payment_label}</code>
-5️⃣ Вернитесь в бот
-6️⃣ Нажмите "Проверить оплату"
+1️⃣ Нажми "Перейти к оплате" 💳
+2️⃣ Выбери способ оплаты 🎯
+3️⃣ Оплати {item['price']}₽ 💰
+4️⃣ В комментарии укажи метку:
+    <code>{payment_label}</code>
+5️⃣ Вернись в бот 🔙
+6️⃣ Нажми "Проверить оплату" 🔄
 
-➖➖➖➖➖➖➖➖➖➖➖
+━━━━━━━━━━━━━━━━━━━
 
 ⚠️ <b>ВАЖНО:</b>
-├ Обязательно укажите метку платежа!
-├ Платеж проверяется автоматически
-└ Заказ действителен 24 часа
+  ├ 🎯 Обязательно укажи метку!
+  ├ ⚡ Автопроверка платежа
+  └ ⏱️ Заказ действителен 24ч
 
-⏰ После оплаты услуга будет выполнена в течение 10-30 минут!
+🚀 После оплаты услуга
+будет выполнена за 10-30 мин! 💯
 
-➖➖➖➖➖➖➖➖➖➖➖
-🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋
+━━━━━━━━━━━━━━━━━━━
 """
     
     keyboard = [
         [InlineKeyboardButton("💳 Перейти к оплате", url=payment_url)],
         [InlineKeyboardButton("🔄 Проверить оплату", callback_data=f"check_payment_{order_id}")],
-        [InlineKeyboardButton("❌ Отменить заказ", callback_data=f"cancel_order_{order_id}")]
+        [InlineKeyboardButton("❌ Отменить", callback_data=f"cancel_order_{order_id}")]
     ]
     
     await update.message.reply_text(
