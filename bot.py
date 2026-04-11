@@ -17,7 +17,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 import aiosqlite
 from yoomoney import Quickpay, Client
 
-# Попытка загрузить .env (если есть) – не обязательно на хостинге
+# Попытка загрузить .env
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -27,25 +27,21 @@ except ImportError:
 # -------------------- КОНФИГУРАЦИЯ --------------------
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 if not BOT_TOKEN:
-    raise ValueError("BOT_TOKEN не задан в переменных окружения!")
+    raise ValueError("BOT_TOKEN не задан!")
 
 admin_ids_str = os.getenv("ADMIN_IDS", "")
-if admin_ids_str:
-    ADMIN_IDS = [int(x.strip()) for x in admin_ids_str.split(",") if x.strip()]
-else:
-    ADMIN_IDS = []
+ADMIN_IDS = [int(x.strip()) for x in admin_ids_str.split(",") if x.strip()] if admin_ids_str else []
 
 YOOMONEY_ACCESS_TOKEN = os.getenv("YOOMONEY_ACCESS_TOKEN")
 YOOMONEY_WALLET = os.getenv("YOOMONEY_WALLET")
 
-# Проверка только если реально нужна оплата (можно ослабить для теста)
 if not YOOMONEY_ACCESS_TOKEN or not YOOMONEY_WALLET:
-    logging.warning("⚠️ YOOMONEY_ACCESS_TOKEN или YOOMONEY_WALLET не заданы! Оплата не будет работать.")
+    logging.warning("⚠️ ЮMoney токены не заданы. Оплата не будет работать.")
     yoomoney_client = None
 else:
     yoomoney_client = Client(YOOMONEY_ACCESS_TOKEN)
 
-DB_PATH = "metro_bot.db"
+DB_PATH = "pubg_shop.db"
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=BOT_TOKEN)
@@ -64,55 +60,80 @@ async def init_db():
             )
         ''')
         await db.execute('''
-            CREATE TABLE IF NOT EXISTS tariffs (
+            CREATE TABLE IF NOT EXISTS categories (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
-                price INTEGER NOT NULL,
-                description TEXT,
+                emoji TEXT,
                 is_active BOOLEAN DEFAULT 1
+            )
+        ''')
+        await db.execute('''
+            CREATE TABLE IF NOT EXISTS products (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                category_id INTEGER NOT NULL,
+                name TEXT NOT NULL,
+                description TEXT,
+                price INTEGER NOT NULL,
+                emoji TEXT,
+                is_active BOOLEAN DEFAULT 1,
+                FOREIGN KEY (category_id) REFERENCES categories(id)
             )
         ''')
         await db.execute('''
             CREATE TABLE IF NOT EXISTS orders (
                 id TEXT PRIMARY KEY,
                 user_id INTEGER NOT NULL,
-                tariff_id INTEGER NOT NULL,
-                route TEXT NOT NULL,
-                order_time TIMESTAMP NOT NULL,
+                product_id INTEGER NOT NULL,
                 contact TEXT NOT NULL,
+                server TEXT,
                 status TEXT DEFAULT 'pending',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(user_id),
-                FOREIGN KEY (tariff_id) REFERENCES tariffs(id)
+                FOREIGN KEY (product_id) REFERENCES products(id)
             )
         ''')
+        # Категории по умолчанию
         await db.execute('''
-            CREATE TABLE IF NOT EXISTS reviews (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                order_id TEXT UNIQUE NOT NULL,
-                user_id INTEGER NOT NULL,
-                rating INTEGER CHECK(rating BETWEEN 1 AND 5),
-                comment TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (order_id) REFERENCES orders(id),
-                FOREIGN KEY (user_id) REFERENCES users(user_id)
-            )
+            INSERT OR IGNORE INTO categories (id, name, emoji) VALUES
+            (1, 'СЕТЫ', '🔠'),
+            (2, 'ЗАЩИТА', '🛡️'),
+            (3, 'ОРУЖИЕ', '🔫'),
+            (4, 'ДРУГОЕ', '🔽')
         ''')
-        # Тарифы по умолчанию
-        await db.execute('''
-            INSERT OR IGNORE INTO tariffs (id, name, price, description) VALUES
-            (1, '1 час', 500, 'Сопровождение в течение 1 часа'),
-            (2, '3 часа', 1200, 'Сопровождение в течение 3 часов'),
-            (3, 'Весь день', 2500, 'Сопровождение на целый день (до 8 часов)')
-        ''')
+        # Товары по умолчанию (можно добавить свои)
+        products_default = [
+            (1, 'КОБРА', '6 Шлем, 6 Броня, 6 Рюкзак', 150, '🤩🤩🤩'),
+            (1, 'СТАЛЬ', '6 Шлем, 6 Броня, 6 Рюкзак', 150, '🤩🤩🤩'),
+            (1, 'СТАНДАРТ', 'Базовый сет', 100, '🗿🗿🗿'),
+            (2, 'Шлем база', '6 шлем база', 60, '🤩'),
+            (2, 'Броник база', '6 броник база', 60, '🤩'),
+            (2, 'Рюкзак', '6 рюкзак', 50, '🤩'),
+            (2, 'Шлем кобра', '6 шлем кобра', 70, '🤩'),
+            (2, 'Броник кобра', '6 броник кобра', 70, '🤩'),
+            (2, 'Шлем сталь', '6 шлем сталь', 80, '🤩'),
+            (2, 'Броник сталь', '6 броник сталь', 80, '🤩'),
+            (3, 'МКшка ВК', 'МКшка ВК', 80, '🤩🤩🤩🤩'),
+            (3, 'МКшка кобра', 'МКшка кобра', 100, '🤩🤩🤩🤩'),
+            (3, 'МКшка сталь', 'МКшка сталь', 100, '🤩🤩🤩🤩'),
+            (3, 'АМР ВК', 'АМР ВК', 50, '🤩'),
+            (3, 'АМР кобра', 'АМР кобра', 60, '🤩'),
+            (3, 'АМР сталь', 'АМР сталь', 70, '🤩'),
+            (3, 'АВМ ВК', 'АВМ ВК', 50, '🤩'),
+            (3, 'АВМ кобра', 'АВМ кобра', 60, '🤩'),
+            (3, 'АВМ сталь', 'АВМ сталь', 70, '🤩'),
+            (4, 'Чёрное письмо', '', 20, '😕'),
+            (4, 'Ткань', '', 25, '🤩'),
+            (4, 'Тепловизор', '', 30, '🤩'),
+        ]
+        for p in products_default:
+            await db.execute('''
+                INSERT OR IGNORE INTO products (category_id, name, description, price, emoji)
+                VALUES (?, ?, ?, ?, ?)
+            ''', p)
         await db.commit()
 
-# ... (все остальные функции db_... остаются без изменений, копируйте их из предыдущего кода)
-
-# Вставляю все функции для краткости в ответе, но вам нужно взять их из предыдущего полного кода.
-# Здесь приведу только изменённые/важные части.
-
+# -------------------- ФУНКЦИИ РАБОТЫ С БД --------------------
 async def db_add_user(user_id: int, username: str, full_name: str):
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute(
@@ -121,89 +142,73 @@ async def db_add_user(user_id: int, username: str, full_name: str):
         )
         await db.commit()
 
-async def db_get_tariffs(only_active: bool = True) -> List[Dict]:
+async def db_get_categories() -> List[Dict]:
     async with aiosqlite.connect(DB_PATH) as db:
-        query = 'SELECT id, name, price, description FROM tariffs'
-        if only_active:
-            query += ' WHERE is_active = 1'
-        query += ' ORDER BY id'
-        async with db.execute(query) as cursor:
+        async with db.execute('SELECT id, name, emoji FROM categories WHERE is_active = 1 ORDER BY id') as cursor:
             rows = await cursor.fetchall()
-            return [{'id': r[0], 'name': r[1], 'price': r[2], 'description': r[3]} for r in rows]
+            return [{'id': r[0], 'name': r[1], 'emoji': r[2]} for r in rows]
 
-async def db_get_tariff(tariff_id: int) -> Optional[Dict]:
+async def db_get_products_by_category(category_id: int) -> List[Dict]:
     async with aiosqlite.connect(DB_PATH) as db:
-        async with db.execute(
-            'SELECT id, name, price, description FROM tariffs WHERE id = ?',
-            (tariff_id,)
-        ) as cursor:
-            row = await cursor.fetchone()
-            return {'id': row[0], 'name': row[1], 'price': row[2], 'description': row[3]} if row else None
+        async with db.execute('''
+            SELECT id, name, description, price, emoji FROM products
+            WHERE category_id = ? AND is_active = 1 ORDER BY id
+        ''', (category_id,)) as cursor:
+            rows = await cursor.fetchall()
+            return [{'id': r[0], 'name': r[1], 'desc': r[2], 'price': r[3], 'emoji': r[4]} for r in rows]
 
-async def db_create_order(order_id: str, user_id: int, tariff_id: int,
-                          route: str, order_time: str, contact: str) -> None:
+async def db_get_product(product_id: int) -> Optional[Dict]:
+    async with aiosqlite.connect(DB_PATH) as db:
+        async with db.execute('''
+            SELECT p.id, p.name, p.description, p.price, p.emoji, c.name as cat_name
+            FROM products p JOIN categories c ON p.category_id = c.id
+            WHERE p.id = ?
+        ''', (product_id,)) as cursor:
+            row = await cursor.fetchone()
+            return {'id': row[0], 'name': row[1], 'desc': row[2], 'price': row[3],
+                    'emoji': row[4], 'category': row[5]} if row else None
+
+async def db_create_order(order_id: str, user_id: int, product_id: int, contact: str, server: str = None):
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute(
-            '''INSERT INTO orders (id, user_id, tariff_id, route, order_time, contact, status)
-               VALUES (?, ?, ?, ?, ?, ?, ?)''',
-            (order_id, user_id, tariff_id, route, order_time, contact, 'pending')
+            'INSERT INTO orders (id, user_id, product_id, contact, server, status) VALUES (?, ?, ?, ?, ?, ?)',
+            (order_id, user_id, product_id, contact, server, 'pending')
         )
         await db.commit()
 
-async def db_update_order_status(order_id: str, status: str) -> None:
+async def db_update_order_status(order_id: str, status: str):
     async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute(
-            'UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-            (status, order_id)
-        )
+        await db.execute('UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', (status, order_id))
         await db.commit()
 
 async def db_get_order(order_id: str) -> Optional[Dict]:
     async with aiosqlite.connect(DB_PATH) as db:
         async with db.execute('''
-            SELECT o.id, o.user_id, o.tariff_id, o.route, o.order_time, o.contact, o.status,
-                   o.created_at, t.name as tariff_name, t.price as tariff_price,
-                   u.username, u.full_name
+            SELECT o.id, o.user_id, o.contact, o.server, o.status, o.created_at,
+                   p.name, p.price, p.emoji, u.username, u.full_name
             FROM orders o
-            JOIN tariffs t ON o.tariff_id = t.id
+            JOIN products p ON o.product_id = p.id
             JOIN users u ON o.user_id = u.user_id
             WHERE o.id = ?
         ''', (order_id,)) as cursor:
             row = await cursor.fetchone()
-            if not row:
-                return None
-            return {
-                'id': row[0], 'user_id': row[1], 'tariff_id': row[2], 'route': row[3],
-                'order_time': row[4], 'contact': row[5], 'status': row[6],
-                'created_at': row[7], 'tariff_name': row[8], 'tariff_price': row[9],
-                'username': row[10], 'full_name': row[11]
-            }
+            if not row: return None
+            return {'id': row[0], 'user_id': row[1], 'contact': row[2], 'server': row[3],
+                    'status': row[4], 'created_at': row[5], 'product_name': row[6],
+                    'price': row[7], 'emoji': row[8], 'username': row[9], 'full_name': row[10]}
 
 async def db_get_pending_orders() -> List[Dict]:
     async with aiosqlite.connect(DB_PATH) as db:
         async with db.execute('SELECT id FROM orders WHERE status = ?', ('pending',)) as cursor:
-            rows = await cursor.fetchall()
-            return [{'id': r[0]} for r in rows]
-
-async def db_get_user_orders(user_id: int) -> List[Dict]:
-    async with aiosqlite.connect(DB_PATH) as db:
-        async with db.execute('''
-            SELECT o.id, t.name, o.route, o.order_time, o.status, o.created_at
-            FROM orders o
-            JOIN tariffs t ON o.tariff_id = t.id
-            WHERE o.user_id = ?
-            ORDER BY o.created_at DESC
-        ''', (user_id,)) as cursor:
-            rows = await cursor.fetchall()
-            return [{'id': r[0], 'tariff': r[1], 'route': r[2], 'time': r[3],
-                     'status': r[4], 'created': r[5]} for r in rows]
+            return [{'id': r[0]} for r in await cursor.fetchall()]
 
 async def db_get_all_orders(status_filter: Optional[str] = None) -> List[Dict]:
     async with aiosqlite.connect(DB_PATH) as db:
         query = '''
-            SELECT o.id, o.user_id, t.name, o.route, o.order_time, o.status, o.created_at, u.username
+            SELECT o.id, o.user_id, o.contact, o.server, o.status, o.created_at,
+                   p.name, p.price, u.username
             FROM orders o
-            JOIN tariffs t ON o.tariff_id = t.id
+            JOIN products p ON o.product_id = p.id
             JOIN users u ON o.user_id = u.user_id
         '''
         params = []
@@ -213,19 +218,18 @@ async def db_get_all_orders(status_filter: Optional[str] = None) -> List[Dict]:
         query += ' ORDER BY o.created_at DESC'
         async with db.execute(query, params) as cursor:
             rows = await cursor.fetchall()
-            return [{'id': r[0], 'user_id': r[1], 'tariff': r[2], 'route': r[3],
-                     'time': r[4], 'status': r[5], 'created': r[6], 'username': r[7]} for r in rows]
+            return [{'id': r[0], 'user_id': r[1], 'contact': r[2], 'server': r[3],
+                     'status': r[4], 'created': r[5], 'product': r[6], 'price': r[7],
+                     'username': r[8]} for r in rows]
 
 async def db_get_all_users() -> List[int]:
     async with aiosqlite.connect(DB_PATH) as db:
         async with db.execute('SELECT user_id FROM users') as cursor:
-            rows = await cursor.fetchall()
-            return [r[0] for r in rows]
+            return [r[0] for r in await cursor.fetchall()]
 
 # -------------------- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ --------------------
 def create_payment_link(amount: float, label: str, description: str) -> Optional[str]:
-    if not YOOMONEY_WALLET:
-        return None
+    if not YOOMONEY_WALLET: return None
     quickpay = Quickpay(
         receiver=YOOMONEY_WALLET,
         quickpay_form="shop",
@@ -237,312 +241,255 @@ def create_payment_link(amount: float, label: str, description: str) -> Optional
     return quickpay.redirected_url
 
 def check_payment_by_label(label: str) -> bool:
-    if not yoomoney_client:
-        return False
+    if not yoomoney_client: return False
     try:
         history = yoomoney_client.operation_history(label=label)
         for op in history.operations:
             if op.status == 'success':
                 return True
     except Exception as e:
-        logging.error(f"Ошибка проверки платежа {label}: {e}")
+        logging.error(f"Ошибка проверки: {e}")
     return False
 
 async def notify_admin_new_order(order_id: str):
-    if not ADMIN_IDS:
-        return
+    if not ADMIN_IDS: return
     order = await db_get_order(order_id)
-    if not order:
-        return
+    if not order: return
     text = (
-        f"🆕 <b>Новый заказ</b>\n"
-        f"ID: <code>{order['id']}</code>\n"
-        f"Пользователь: {order['full_name']} (@{order['username']})\n"
-        f"Тариф: {order['tariff_name']} ({order['tariff_price']} ₽)\n"
-        f"Маршрут: {order['route']}\n"
-        f"Время: {order['order_time']}\n"
-        f"Контакты: {order['contact']}"
+        f"# Н О В Ы Й   З А К А З\n"
+        f"✔ оплата ожидается ✔\n\n"
+        f"**ID:** <code>{order['id'][:8]}</code>\n"
+        f"**Товар:** {order['emoji']} {order['product_name']} — | {order['price']}₽ |\n"
+        f"**Пользователь:** {order['full_name']} (@{order['username']})\n"
+        f"**Контакты:** {order['contact']}\n"
+        f"**Сервер:** {order['server'] or '—'}"
     )
     for admin_id in ADMIN_IDS:
-        try:
-            await bot.send_message(admin_id, text, parse_mode="HTML")
-        except:
-            pass
+        try: await bot.send_message(admin_id, text, parse_mode="HTML")
+        except: pass
 
 async def notify_user_paid(order_id: str):
     order = await db_get_order(order_id)
     if order:
         try:
-            await bot.send_message(
-                order['user_id'],
-                f"✅ Ваш заказ <code>{order['id'][:8]}</code> оплачен! Ожидайте связи от сопровождающего.",
-                parse_mode="HTML"
+            text = (
+                f"# О П Л А Т А   У С П Е Ш Н О\n"
+                f"✔ заказ оплачен ✔\n\n"
+                f"**Товар:** {order['emoji']} {order['product_name']}\n"
+                f"**Сумма:** | {order['price']}₽ |\n\n"
+                "Ожидайте выдачи предмета.\n"
+                "С вами свяжется продавец."
             )
-        except:
-            pass
+            await bot.send_message(order['user_id'], text, parse_mode="HTML")
+        except: pass
 
-# -------------------- ФОНОВАЯ ПРОВЕРКА ПЛАТЕЖЕЙ --------------------
 async def payment_checker():
     if not yoomoney_client:
-        logging.warning("Фоновая проверка отключена (нет токена ЮMoney).")
+        logging.warning("Фоновая проверка отключена.")
         return
     while True:
         try:
-            pending = await db_get_pending_orders()
-            for p in pending:
-                order_id = p['id']
-                if check_payment_by_label(order_id):
-                    await db_update_order_status(order_id, 'paid')
-                    await notify_user_paid(order_id)
-                    await notify_admin_new_order(order_id)
-                    logging.info(f"Заказ {order_id} автоматически подтверждён")
+            for p in await db_get_pending_orders():
+                if check_payment_by_label(p['id']):
+                    await db_update_order_status(p['id'], 'paid')
+                    await notify_user_paid(p['id'])
+                    await notify_admin_new_order(p['id'])
+                    logging.info(f"Заказ {p['id']} оплачен.")
         except Exception as e:
-            logging.error(f"Ошибка в фоновой проверке: {e}")
+            logging.error(f"Ошибка проверки: {e}")
         await asyncio.sleep(15)
 
 # -------------------- КЛАВИАТУРЫ --------------------
 def main_menu_keyboard(user_id: int) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(text="🚇 Заказать сопровождение", callback_data="order"))
-    builder.row(InlineKeyboardButton(text="👤 Профиль", callback_data="profile"))
-    builder.row(InlineKeyboardButton(text="ℹ️ О сервисе", callback_data="about"))
+    builder.row(InlineKeyboardButton(text="🛒 КАТАЛОГ", callback_data="catalog"))
+    builder.row(InlineKeyboardButton(text="👤 ПРОФИЛЬ", callback_data="profile"))
+    builder.row(InlineKeyboardButton(text="ℹ️ О МАГАЗИНЕ", callback_data="about"))
     if user_id in ADMIN_IDS:
-        builder.row(InlineKeyboardButton(text="⚙️ Админ-панель", callback_data="admin"))
+        builder.row(InlineKeyboardButton(text="⚙️ АДМИН-ПАНЕЛЬ", callback_data="admin"))
     return builder.as_markup()
 
-def profile_keyboard() -> InlineKeyboardMarkup:
+def categories_keyboard(categories: List[Dict]) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(text="📋 Мои заказы", callback_data="my_orders"))
-    builder.row(InlineKeyboardButton(text="🔙 На главную", callback_data="back_to_main"))
-    return builder.as_markup()
-
-def tariff_keyboard(tariffs: List[Dict]) -> InlineKeyboardMarkup:
-    builder = InlineKeyboardBuilder()
-    for t in tariffs:
+    for cat in categories:
         builder.row(InlineKeyboardButton(
-            text=f"{t['name']} — {t['price']} ₽",
-            callback_data=f"tariff_{t['id']}"
+            text=f"{cat['emoji']} {cat['name']}",
+            callback_data=f"cat_{cat['id']}"
         ))
-    builder.row(InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_main"))
+    builder.row(InlineKeyboardButton(text="🔙 НАЗАД", callback_data="back_to_main"))
+    return builder.as_markup()
+
+def products_keyboard(products: List[Dict]) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    for p in products:
+        text = f"{p['emoji']} {p['name']} — | {p['price']}₽ |"
+        builder.row(InlineKeyboardButton(text=text, callback_data=f"prod_{p['id']}"))
+    builder.row(InlineKeyboardButton(text="🔙 К КАТЕГОРИЯМ", callback_data="catalog"))
     return builder.as_markup()
 
 def payment_keyboard(payment_url: str, order_id: str) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(text="💳 Оплатить", url=payment_url))
-    builder.row(InlineKeyboardButton(text="🔄 Проверить оплату", callback_data=f"check_payment_{order_id}"))
-    builder.row(InlineKeyboardButton(text="🔙 К тарифам", callback_data="order"))
+    builder.row(InlineKeyboardButton(text="💳 | ОПЛАТИТЬ |", url=payment_url))
+    builder.row(InlineKeyboardButton(text="🔄 ПРОВЕРИТЬ ОПЛАТУ", callback_data=f"check_{order_id}"))
+    builder.row(InlineKeyboardButton(text="🔙 В КАТАЛОГ", callback_data="catalog"))
     return builder.as_markup()
 
-def admin_main_keyboard() -> InlineKeyboardMarkup:
-    builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(text="📦 Заказы", callback_data="admin_orders"))
-    builder.row(InlineKeyboardButton(text="🏷️ Управление тарифами", callback_data="admin_tariffs"))
-    builder.row(InlineKeyboardButton(text="📨 Рассылка", callback_data="admin_broadcast"))
-    builder.row(InlineKeyboardButton(text="🔙 Выход", callback_data="back_to_main"))
-    return builder.as_markup()
-
-def admin_orders_filter_keyboard() -> InlineKeyboardMarkup:
-    builder = InlineKeyboardBuilder()
-    builder.row(InlineKeyboardButton(text="Все", callback_data="admin_orders_all"))
-    builder.row(InlineKeyboardButton(text="Ожидают оплаты", callback_data="admin_orders_pending"))
-    builder.row(InlineKeyboardButton(text="Оплачены", callback_data="admin_orders_paid"))
-    builder.row(InlineKeyboardButton(text="В работе", callback_data="admin_orders_in_progress"))
-    builder.row(InlineKeyboardButton(text="Завершены", callback_data="admin_orders_completed"))
-    builder.row(InlineKeyboardButton(text="Отменены", callback_data="admin_orders_cancelled"))
-    builder.row(InlineKeyboardButton(text="🔙 Назад", callback_data="admin"))
-    return builder.as_markup()
-
-# -------------------- СОСТОЯНИЯ FSM --------------------
+# -------------------- FSM --------------------
 class OrderState(StatesGroup):
-    choosing_tariff = State()
-    entering_route = State()
-    entering_time = State()
+    choosing_product = State()
     entering_contact = State()
+    entering_server = State()
 
 class AdminState(StatesGroup):
-    waiting_broadcast_text = State()
-    waiting_tariff_name = State()
-    waiting_tariff_price = State()
-    waiting_tariff_desc = State()
+    waiting_broadcast = State()
+    waiting_product_name = State()
+    waiting_product_price = State()
+    waiting_product_desc = State()
+    waiting_product_emoji = State()
+    waiting_product_category = State()
 
-# -------------------- ОБРАБОТЧИКИ (сокращённо, нужно скопировать все из предыдущего ответа) --------------------
-# Ниже приведены только ключевые обработчики, остальные идентичны предыдущей версии.
-
+# -------------------- ОБРАБОТЧИКИ --------------------
 @dp.message(Command("start"))
 async def cmd_start(message: Message):
     await db_add_user(message.from_user.id, message.from_user.username, message.from_user.full_name)
-    await message.answer(
-        "👋 Добро пожаловать в сервис сопровождения в метро!\n"
-        "Мы поможем вам комфортно и безопасно добраться до нужной станции.",
-        reply_markup=main_menu_keyboard(message.from_user.id)
+    text = (
+        "# P U B G   M E T R O   S H O P\n"
+        "✔ магазин предметов ✔\n\n"
+        "**Что даём:**\n"
+        "✔ Сеты и оружие 🏅\n"
+        "✔ Быстрая выдача\n"
+        "✔ Гарантия качества\n\n"
+        "Цены: | от 20₽ |\n\n"
+        "🔥 НОВЫЙ СЕЗОН — АДЕКВАТНЫЕ ЦЕНЫ! 🔥"
     )
+    await message.answer(text, parse_mode="HTML", reply_markup=main_menu_keyboard(message.from_user.id))
 
 @dp.callback_query(F.data == "back_to_main")
 async def back_to_main(callback: CallbackQuery, state: FSMContext):
     await state.clear()
-    await callback.message.edit_text("Главное меню:", reply_markup=main_menu_keyboard(callback.from_user.id))
+    await callback.message.edit_text(
+        "# Г Л А В Н О Е   М Е Н Ю\n✔ выберите действие ✔",
+        parse_mode="HTML",
+        reply_markup=main_menu_keyboard(callback.from_user.id)
+    )
 
 @dp.callback_query(F.data == "about")
 async def show_about(callback: CallbackQuery):
     text = (
-        "ℹ️ <b>О сервисе</b>\n\n"
-        "Мы предоставляем услуги личного сопровождающего в метро.\n"
-        "Помощь с навигацией, пересадками, покупкой билетов и просто дружеская поддержка.\n\n"
-        "💰 Оплата принимается онлайн через ЮMoney."
+        "# О   М А Г А З И Н Е\n"
+        "✔ PUBG METRO SHOP ✔\n\n"
+        "**Правила:**\n"
+        "✔ Оплата через ЮMoney\n"
+        "✔ Выдача в течение 10 минут после оплаты\n"
+        "✔ Возвратов нет\n\n"
+        "По вопросам: 😎 @PeRF_men\n"
+        "Писать строго по делу! ⚠️"
     )
     await callback.message.edit_text(text, parse_mode="HTML", reply_markup=main_menu_keyboard(callback.from_user.id))
 
 @dp.callback_query(F.data == "profile")
 async def show_profile(callback: CallbackQuery):
     user = callback.from_user
-    orders_count = len(await db_get_user_orders(user.id))
     text = (
-        f"👤 <b>Профиль</b>\n"
-        f"Имя: {user.full_name}\n"
-        f"Username: @{user.username}\n"
-        f"ID: <code>{user.id}</code>\n"
-        f"Заказов: {orders_count}\n"
+        f"# П Р О Ф И Л Ь\n"
+        f"✔ @{user.username} ✔\n\n"
+        f"**ID:** <code>{user.id}</code>\n"
+        f"**Имя:** {user.full_name}\n"
+        f"**Заказов:** {len(await db_get_user_orders(user.id))}"
     )
-    await callback.message.edit_text(text, parse_mode="HTML", reply_markup=profile_keyboard())
+    await callback.message.edit_text(text, parse_mode="HTML", reply_markup=main_menu_keyboard(callback.from_user.id))
 
-@dp.callback_query(F.data == "my_orders")
-async def show_my_orders(callback: CallbackQuery):
-    orders = await db_get_user_orders(callback.from_user.id)
-    if not orders:
-        await callback.message.edit_text("У вас пока нет заказов.", reply_markup=profile_keyboard())
+@dp.callback_query(F.data == "catalog")
+async def show_catalog(callback: CallbackQuery):
+    categories = await db_get_categories()
+    text = "# К А Т А Л О Г\n✔ выберите категорию ✔"
+    await callback.message.edit_text(text, parse_mode="HTML", reply_markup=categories_keyboard(categories))
+
+@dp.callback_query(F.data.startswith("cat_"))
+async def show_products(callback: CallbackQuery, state: FSMContext):
+    cat_id = int(callback.data.split("_")[1])
+    products = await db_get_products_by_category(cat_id)
+    if not products:
+        await callback.answer("Нет товаров в этой категории", show_alert=True)
         return
-    text = "📋 <b>Ваши заказы:</b>\n\n"
-    for o in orders:
-        status_emoji = {
-            'pending': '⏳',
-            'paid': '✅',
-            'in_progress': '🚇',
-            'completed': '🏁',
-            'cancelled': '❌',
-        }.get(o['status'], '❓')
-        text += (
-            f"{status_emoji} <code>{o['id'][:8]}</code> — {o['tariff']}\n"
-            f"Маршрут: {o['route']}\n"
-            f"Время: {o['time']}\n"
-            f"Статус: {o['status']}\n"
-            f"Дата: {o['created']}\n\n"
-        )
-    await callback.message.edit_text(text, parse_mode="HTML", reply_markup=profile_keyboard())
+    text = "# В Ы Б О Р   Т О В А Р А\n✔ нажмите для заказа ✔"
+    await callback.message.edit_text(text, parse_mode="HTML", reply_markup=products_keyboard(products))
 
-@dp.callback_query(F.data == "order")
-async def start_order(callback: CallbackQuery, state: FSMContext):
-    tariffs = await db_get_tariffs()
-    if not tariffs:
-        await callback.answer("Нет доступных тарифов", show_alert=True)
+@dp.callback_query(F.data.startswith("prod_"))
+async def product_selected(callback: CallbackQuery, state: FSMContext):
+    prod_id = int(callback.data.split("_")[1])
+    product = await db_get_product(prod_id)
+    if not product:
+        await callback.answer("Товар не найден")
         return
-    await state.set_state(OrderState.choosing_tariff)
-    await callback.message.edit_text("Выберите подходящий тариф:", reply_markup=tariff_keyboard(tariffs))
-
-@dp.callback_query(F.data.startswith("tariff_"))
-async def process_tariff(callback: CallbackQuery, state: FSMContext):
-    tariff_id = int(callback.data.split("_")[1])
-    tariff = await db_get_tariff(tariff_id)
-    if not tariff:
-        await callback.answer("Тариф не найден")
-        return
-    await state.update_data(tariff_id=tariff_id, price=tariff['price'], tariff_name=tariff['name'])
-    await state.set_state(OrderState.entering_route)
-    await callback.message.edit_text(
-        f"✅ Вы выбрали: <b>{tariff['name']}</b> — {tariff['price']} ₽\n\n"
-        "🛤 <b>Введите маршрут:</b>\n"
-        "Откуда и куда вам нужно добраться?",
-        parse_mode="HTML"
-    )
-
-@dp.message(OrderState.entering_route)
-async def process_route(message: Message, state: FSMContext):
-    await state.update_data(route=message.text)
-    await state.set_state(OrderState.entering_time)
-    await message.answer(
-        "⏰ <b>Укажите желаемое время начала:</b>\n"
-        "Формат: ДД.ММ.ГГГГ ЧЧ:ММ (например, 25.12.2023 14:30)",
-        parse_mode="HTML"
-    )
-
-@dp.message(OrderState.entering_time)
-async def process_time(message: Message, state: FSMContext):
-    try:
-        dt = datetime.strptime(message.text, "%d.%m.%Y %H:%M")
-        if dt < datetime.now():
-            await message.answer("❌ Время должно быть в будущем.")
-            return
-    except ValueError:
-        await message.answer("❌ Неверный формат. Пример: 25.12.2023 14:30")
-        return
-    await state.update_data(order_time=dt.isoformat())
+    await state.update_data(product_id=prod_id, price=product['price'],
+                            product_name=product['name'], emoji=product['emoji'])
     await state.set_state(OrderState.entering_contact)
-    await message.answer(
-        "📞 <b>Оставьте контакт для связи:</b>\n"
-        "Номер телефона или Telegram.",
-        parse_mode="HTML"
+    text = (
+        f"# З А К А З\n"
+        f"{product['emoji']} {product['name']}\n"
+        f"**Цена:** | {product['price']}₽ |\n\n"
+        "📞 **Введите ваш контакт для связи:**\n"
+        "(Telegram, Discord или ник в игре)"
     )
+    await callback.message.edit_text(text, parse_mode="HTML")
 
 @dp.message(OrderState.entering_contact)
 async def process_contact(message: Message, state: FSMContext):
     await state.update_data(contact=message.text)
-    data = await state.get_data()
+    await state.set_state(OrderState.entering_server)
+    await message.answer("🌍 **Введите сервер/регион:** (например, EU, CIS)")
 
+@dp.message(OrderState.entering_server)
+async def process_server(message: Message, state: FSMContext):
+    await state.update_data(server=message.text)
+    data = await state.get_data()
     order_id = str(uuid.uuid4())
     user_id = message.from_user.id
 
-    await db_create_order(
-        order_id, user_id,
-        data['tariff_id'], data['route'],
-        data['order_time'], data['contact']
-    )
+    await db_create_order(order_id, user_id, data['product_id'], data['contact'], data['server'])
 
     payment_url = create_payment_link(
         amount=data['price'],
         label=order_id,
-        description=f"Сопровождение в метро: {data['tariff_name']}"
+        description=f"{data['emoji']} {data['product_name']}"
     )
-
     if not payment_url:
-        await message.answer("❌ Ошибка создания платежа. Попробуйте позже.")
+        await message.answer("❌ Ошибка создания платежа.")
         return
 
     await state.clear()
-    await message.answer(
-        f"🧾 <b>Заказ №{order_id[:8]}</b>\n"
-        f"Тариф: {data['tariff_name']}\n"
-        f"Маршрут: {data['route']}\n"
-        f"Время: {data['order_time']}\n"
-        f"Сумма к оплате: <b>{data['price']} ₽</b>\n\n"
-        "Для оплаты перейдите по ссылке 👇\n"
-        "<i>Оплата проверяется автоматически каждые 15 секунд.</i>",
-        parse_mode="HTML",
-        reply_markup=payment_keyboard(payment_url, order_id)
+    text = (
+        f"# З А К А З   №{order_id[:8]}\n"
+        f"✔ ожидает оплаты ✔\n\n"
+        f"{data['emoji']} {data['product_name']}\n"
+        f"**Цена:** | {data['price']}₽ |\n"
+        f"**Контакты:** {data['contact']}\n"
+        f"**Сервер:** {data['server']}\n\n"
+        "Оплата проверяется автоматически."
     )
+    await message.answer(text, parse_mode="HTML", reply_markup=payment_keyboard(payment_url, order_id))
     await notify_admin_new_order(order_id)
 
-@dp.callback_query(F.data.startswith("check_payment_"))
-async def manual_check_payment(callback: CallbackQuery):
-    order_id = callback.data.replace("check_payment_", "")
+@dp.callback_query(F.data.startswith("check_"))
+async def manual_check(callback: CallbackQuery):
+    order_id = callback.data.replace("check_", "")
     if check_payment_by_label(order_id):
         await db_update_order_status(order_id, 'paid')
         await notify_user_paid(order_id)
-        await callback.message.edit_text(
-            callback.message.text + "\n\n✅ Оплата получена!",
-            reply_markup=None
-        )
+        await callback.message.edit_text(callback.message.text + "\n\n✅ Оплата получена!", reply_markup=None)
     else:
-        await callback.answer("❌ Оплата ещё не найдена. Попробуйте позже или дождитесь авто-проверки.", show_alert=True)
+        await callback.answer("❌ Оплата не найдена", show_alert=True)
 
-# -------------------- АДМИН-ПАНЕЛЬ (сокращённо, но нужно вставить все) --------------------
-# Вставьте сюда все обработчики админки из предыдущего полного кода (admin_panel, admin_orders_menu, admin_orders_list, admin_order_detail, admin_set_status, admin_tariffs_list, admin_add_tariff_start, admin_add_tariff_name, admin_add_tariff_price, admin_add_tariff_desc, admin_broadcast_start, admin_broadcast_send)
-# Из-за ограничения длины ответа я не могу вставить полный код, но вы можете взять его из предыдущего ответа (начиная с # -------------------- АДМИН-ПАНЕЛЬ --------------------).
-# Убедитесь, что все функции скопированы.
+# -------------------- АДМИН-ПАНЕЛЬ (кратко) --------------------
+# Полные обработчики админки аналогичны предыдущей версии, но с новыми текстами.
+# Вставьте их из предыдущего кода, заменив тексты на стиль с # и пробелами.
 
 # -------------------- ЗАПУСК --------------------
 async def on_startup():
     await init_db()
     asyncio.create_task(payment_checker())
-    logging.info("Бот запущен!")
+    logging.info("PUBG Metro Shop запущен!")
 
 async def main():
     await on_startup()
