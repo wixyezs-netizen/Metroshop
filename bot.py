@@ -4,7 +4,7 @@ import asyncio
 import random
 import string
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Dict, List, Optional
 import aiosqlite
 from dotenv import load_dotenv
@@ -40,28 +40,25 @@ YOOMONEY_WALLET = os.getenv('YOOMONEY_WALLET')
 # База данных
 DB_NAME = 'metro_shop.db'
 
-# Цены на товары и услуги
+# Цены на услуги Metro Royale
 PRICES = {
-    'uc_60': {'amount': 60, 'price': 150, 'emoji': '💎', 'name': '60 UC'},
-    'uc_300': {'amount': 300, 'price': 700, 'emoji': '💎', 'name': '300 UC'},
-    'uc_600': {'amount': 600, 'price': 1300, 'emoji': '💎', 'name': '600 UC'},
-    'uc_1500': {'amount': 1500, 'price': 3000, 'emoji': '💎', 'name': '1500 UC'},
-    'uc_3000': {'amount': 3000, 'price': 5800, 'emoji': '💎', 'name': '3000 UC'},
-    'uc_6000': {'amount': 6000, 'price': 11000, 'emoji': '💎', 'name': '6000 UC'},
+    # Карты Metro Royale
+    'map5': {'name': '💜 Карта 5', 'price': 200, 'emoji': '🗺️'},
+    'map5_vip': {'name': '💜 Карта 5 VIP', 'price': 300, 'emoji': '👑'},
+    'map7': {'name': '💜 Карта 7', 'price': 250, 'emoji': '🗺️'},
+    'map7_vip': {'name': '💜 Карта 7 VIP', 'price': 350, 'emoji': '👑'},
+    'map8': {'name': '💜 Карта 8', 'price': 300, 'emoji': '🗺️'},
+    'map8_vip': {'name': '💜 Карта 8 VIP', 'price': 400, 'emoji': '👑'},
     
-    'rp_pass': {'name': 'Royale Pass', 'price': 800, 'emoji': '🎫'},
-    'rp_elite': {'name': 'Elite Pass Plus', 'price': 2000, 'emoji': '👑'},
+    # Сопроводы с экипировкой
+    'escort_80': {'name': '🤗 Сопровод (80₽)', 'price': 80, 'emoji': '🚇', 'includes': '🪖🧥🎒'},
+    'escort_100': {'name': '🤗 Сопровод (100₽)', 'price': 100, 'emoji': '🚇', 'includes': '🪖🧥🎒'},
+    'escort_120': {'name': '🤗 Сопровод (120₽)', 'price': 120, 'emoji': '🚇', 'includes': '🪖🧥🎒'},
     
-    'boost_bronze': {'name': 'Прокачка до Bronze', 'price': 500, 'emoji': '🥉'},
-    'boost_silver': {'name': 'Прокачка до Silver', 'price': 1000, 'emoji': '🥈'},
-    'boost_gold': {'name': 'Прокачка до Gold', 'price': 2000, 'emoji': '🥇'},
-    'boost_platinum': {'name': 'Прокачка до Platinum', 'price': 3500, 'emoji': '💠'},
-    'boost_diamond': {'name': 'Прокачка до Diamond', 'price': 5500, 'emoji': '💎'},
-    'boost_crown': {'name': 'Прокачка до Crown', 'price': 8000, 'emoji': '👑'},
-    'boost_ace': {'name': 'Прокачка до Ace', 'price': 12000, 'emoji': '🏆'},
-    
-    'metro_escort': {'name': 'Сопровождение Metro (1 игра)', 'price': 300, 'emoji': '🚇'},
-    'metro_farm': {'name': 'Фарм Metro (5 игр)', 'price': 1200, 'emoji': '⛏️'},
+    # Дополнительные услуги
+    'mk_tower': {'name': 'МК вышка', 'price': 30, 'emoji': '🔥'},
+    'farm_5': {'name': '⛏️ Фарм Metro (5 игр)', 'price': 400, 'emoji': '⛏️'},
+    'farm_10': {'name': '⛏️ Фарм Metro (10 игр)', 'price': 750, 'emoji': '⛏️'},
 }
 
 # ======================== YOOMONEY API ========================
@@ -81,19 +78,16 @@ class YooMoneyAPI:
             "Content-Type": "application/x-www-form-urlencoded"
         }
         
-        data = {
-            "records": records
-        }
-        
+        data = {"records": records}
         if label:
             data["label"] = label
         
         try:
-            response = requests.post(url, headers=headers, data=data)
+            response = requests.post(url, headers=headers, data=data, timeout=10)
             if response.status_code == 200:
                 return response.json()
             else:
-                logger.error(f"YooMoney API error: {response.status_code} - {response.text}")
+                logger.error(f"YooMoney API error: {response.status_code}")
                 return {"operations": []}
         except Exception as e:
             logger.error(f"YooMoney API exception: {e}")
@@ -103,33 +97,19 @@ class YooMoneyAPI:
         """Проверка платежа по метке"""
         history = self.get_operation_history(label=label)
         
-        if "operations" not in history:
-            return False, 0
-        
         for operation in history.get("operations", []):
-            # Проверяем что это входящий платеж
-            if operation.get("direction") != "in":
-                continue
-            
-            # Проверяем статус
-            if operation.get("status") != "success":
-                continue
-            
-            # Проверяем метку
-            if operation.get("label") != label:
-                continue
-            
-            # Проверяем сумму
-            operation_amount = float(operation.get("amount", 0))
-            if operation_amount >= amount:
-                return True, operation_amount
+            if (operation.get("direction") == "in" and 
+                operation.get("status") == "success" and 
+                operation.get("label") == label):
+                
+                operation_amount = float(operation.get("amount", 0))
+                if operation_amount >= amount:
+                    return True, operation_amount
         
         return False, 0
     
-    def create_payment_form_url(self, receiver: str, amount: float, label: str, comment: str = "") -> str:
+    def create_payment_url(self, receiver: str, amount: float, label: str, comment: str = "") -> str:
         """Создание ссылки для оплаты"""
-        base_url = "https://yoomoney.ru/quickpay/confirm.xml"
-        
         params = {
             "receiver": receiver,
             "quickpay-form": "shop",
@@ -140,7 +120,7 @@ class YooMoneyAPI:
         }
         
         query_string = "&".join([f"{k}={v}" for k, v in params.items()])
-        return f"{base_url}?{query_string}"
+        return f"https://yoomoney.ru/quickpay/confirm.xml?{query_string}"
 
 # Инициализация YooMoney API
 yoomoney = YooMoneyAPI(YOOMONEY_TOKEN) if YOOMONEY_TOKEN else None
@@ -182,7 +162,6 @@ async def init_db():
         await db.commit()
 
 async def add_user(user_id: int, username: str, first_name: str):
-    """Добавление пользователя"""
     async with aiosqlite.connect(DB_NAME) as db:
         await db.execute('''
             INSERT OR IGNORE INTO users (user_id, username, first_name)
@@ -191,7 +170,6 @@ async def add_user(user_id: int, username: str, first_name: str):
         await db.commit()
 
 async def create_order(user_id: int, username: str, item_key: str, item_name: str, price: float, pubg_id: str = None):
-    """Создание заказа"""
     order_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
     payment_label = f"METRO_{order_id}"
     
@@ -205,23 +183,13 @@ async def create_order(user_id: int, username: str, item_key: str, item_name: st
     return order_id, payment_label
 
 async def get_order(order_id: str):
-    """Получение информации о заказе"""
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = aiosqlite.Row
         async with db.execute('SELECT * FROM orders WHERE order_id = ?', (order_id,)) as cursor:
             row = await cursor.fetchone()
             return dict(row) if row else None
 
-async def get_order_by_label(label: str):
-    """Получение заказа по метке платежа"""
-    async with aiosqlite.connect(DB_NAME) as db:
-        db.row_factory = aiosqlite.Row
-        async with db.execute('SELECT * FROM orders WHERE payment_label = ?', (label,)) as cursor:
-            row = await cursor.fetchone()
-            return dict(row) if row else None
-
 async def update_order_status(order_id: str, status: str):
-    """Обновление статуса заказа"""
     async with aiosqlite.connect(DB_NAME) as db:
         if status == 'paid':
             await db.execute('''
@@ -238,7 +206,6 @@ async def update_order_status(order_id: str, status: str):
         await db.commit()
 
 async def get_user_orders(user_id: int, limit: int = 10):
-    """Получение заказов пользователя"""
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = aiosqlite.Row
         async with db.execute('''
@@ -248,19 +215,7 @@ async def get_user_orders(user_id: int, limit: int = 10):
             rows = await cursor.fetchall()
             return [dict(row) for row in rows]
 
-async def get_pending_orders():
-    """Получение ожидающих оплаты заказов"""
-    async with aiosqlite.connect(DB_NAME) as db:
-        db.row_factory = aiosqlite.Row
-        async with db.execute('''
-            SELECT * FROM orders WHERE status = 'awaiting_payment'
-            AND created_at > datetime('now', '-24 hours')
-        ''') as cursor:
-            rows = await cursor.fetchall()
-            return [dict(row) for row in rows]
-
 async def update_user_stats(user_id: int, amount: float):
-    """Обновление статистики пользователя"""
     async with aiosqlite.connect(DB_NAME) as db:
         await db.execute('''
             UPDATE users SET total_orders = total_orders + 1, total_spent = total_spent + ?
@@ -269,27 +224,21 @@ async def update_user_stats(user_id: int, amount: float):
         await db.commit()
 
 async def get_stats():
-    """Получение статистики"""
     async with aiosqlite.connect(DB_NAME) as db:
         db.row_factory = aiosqlite.Row
         
-        # Всего пользователей
         async with db.execute('SELECT COUNT(*) as count FROM users') as cursor:
             total_users = (await cursor.fetchone())['count']
         
-        # Всего заказов
         async with db.execute('SELECT COUNT(*) as count FROM orders') as cursor:
             total_orders = (await cursor.fetchone())['count']
         
-        # Выполненных заказов
         async with db.execute("SELECT COUNT(*) as count FROM orders WHERE status = 'completed'") as cursor:
             completed_orders = (await cursor.fetchone())['count']
         
-        # Общая выручка
         async with db.execute("SELECT SUM(price) as sum FROM orders WHERE status = 'completed'") as cursor:
             total_revenue = (await cursor.fetchone())['sum'] or 0
         
-        # Заказов сегодня
         async with db.execute('''
             SELECT COUNT(*) as count FROM orders 
             WHERE DATE(created_at) = DATE('now')
@@ -308,14 +257,10 @@ async def get_stats():
 
 def get_main_menu():
     keyboard = [
-        [
-            InlineKeyboardButton("💎 Купить UC", callback_data="buy_uc"),
-            InlineKeyboardButton("🎫 Проходки", callback_data="buy_passes")
-        ],
-        [
-            InlineKeyboardButton("📈 Прокачка рейтинга", callback_data="boost_rank"),
-            InlineKeyboardButton("🚇 Metro Royale", callback_data="metro_services")
-        ],
+        [InlineKeyboardButton("🗺️ Карты Metro Royale", callback_data="metro_maps")],
+        [InlineKeyboardButton("🚇 Сопроводы с экипировкой", callback_data="escorts")],
+        [InlineKeyboardButton("⛏️ Фарм услуги", callback_data="farm_services")],
+        [InlineKeyboardButton("🔥 Дополнительные услуги", callback_data="extra_services")],
         [
             InlineKeyboardButton("💼 Мои заказы", callback_data="my_orders"),
             InlineKeyboardButton("ℹ️ О нас", callback_data="about")
@@ -327,55 +272,44 @@ def get_main_menu():
     ]
     return InlineKeyboardMarkup(keyboard)
 
-def get_uc_menu():
+def get_maps_menu():
     keyboard = [
         [
-            InlineKeyboardButton("💎 60 UC — 150₽", callback_data="uc_60"),
-            InlineKeyboardButton("💎 300 UC — 700₽", callback_data="uc_300")
+            InlineKeyboardButton("💜 Карта 5 — 200₽", callback_data="map5"),
+            InlineKeyboardButton("👑 Карта 5 VIP — 300₽", callback_data="map5_vip")
         ],
         [
-            InlineKeyboardButton("💎 600 UC — 1,300₽", callback_data="uc_600"),
-            InlineKeyboardButton("💎 1500 UC — 3,000₽", callback_data="uc_1500")
+            InlineKeyboardButton("💜 Карта 7 — 250₽", callback_data="map7"),
+            InlineKeyboardButton("👑 Карта 7 VIP — 350₽", callback_data="map7_vip")
         ],
         [
-            InlineKeyboardButton("💎 3000 UC — 5,800₽", callback_data="uc_3000"),
-            InlineKeyboardButton("💎 6000 UC — 11,000₽", callback_data="uc_6000")
+            InlineKeyboardButton("💜 Карта 8 — 300₽", callback_data="map8"),
+            InlineKeyboardButton("👑 Карта 8 VIP — 400₽", callback_data="map8_vip")
         ],
         [InlineKeyboardButton("🔙 Назад", callback_data="main_menu")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
-def get_passes_menu():
+def get_escorts_menu():
     keyboard = [
-        [InlineKeyboardButton("🎫 Royale Pass — 800₽", callback_data="rp_pass")],
-        [InlineKeyboardButton("👑 Elite Pass Plus — 2,000₽", callback_data="rp_elite")],
+        [InlineKeyboardButton("🤗 Сопровод 80₽ (🪖🧥🎒)", callback_data="escort_80")],
+        [InlineKeyboardButton("🤗 Сопровод 100₽ (🪖🧥🎒)", callback_data="escort_100")],
+        [InlineKeyboardButton("🤗 Сопровод 120₽ (🪖🧥🎒)", callback_data="escort_120")],
         [InlineKeyboardButton("🔙 Назад", callback_data="main_menu")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
-def get_boost_menu():
+def get_farm_menu():
     keyboard = [
-        [
-            InlineKeyboardButton("🥉 Bronze — 500₽", callback_data="boost_bronze"),
-            InlineKeyboardButton("🥈 Silver — 1,000₽", callback_data="boost_silver")
-        ],
-        [
-            InlineKeyboardButton("🥇 Gold — 2,000₽", callback_data="boost_gold"),
-            InlineKeyboardButton("💠 Platinum — 3,500₽", callback_data="boost_platinum")
-        ],
-        [
-            InlineKeyboardButton("💎 Diamond — 5,500₽", callback_data="boost_diamond"),
-            InlineKeyboardButton("👑 Crown — 8,000₽", callback_data="boost_crown")
-        ],
-        [InlineKeyboardButton("🏆 Ace — 12,000₽", callback_data="boost_ace")],
+        [InlineKeyboardButton("⛏️ Фарм 5 игр — 400₽", callback_data="farm_5")],
+        [InlineKeyboardButton("⛏️ Фарм 10 игр — 750₽", callback_data="farm_10")],
         [InlineKeyboardButton("🔙 Назад", callback_data="main_menu")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
-def get_metro_menu():
+def get_extra_menu():
     keyboard = [
-        [InlineKeyboardButton("🚇 Сопровождение (1 игра) — 300₽", callback_data="metro_escort")],
-        [InlineKeyboardButton("⛏️ Фарм Metro (5 игр) — 1,200₽", callback_data="metro_farm")],
+        [InlineKeyboardButton("🔥 МК вышка — 30₽", callback_data="mk_tower")],
         [InlineKeyboardButton("🔙 Назад", callback_data="main_menu")]
     ]
     return InlineKeyboardMarkup(keyboard)
@@ -401,81 +335,218 @@ def get_admin_order_menu(order_id: str):
 # ======================== ТЕКСТЫ ========================
 
 WELCOME_TEXT = """
-🎮 <b>Добро пожаловать в Metro Shop PUBG Mobile!</b>
+🤩⚡⚡⚡⚡⚡⚡🤩
 
-💎 Ваш надежный магазин игровых услуг:
-├ 💰 Пополнение UC
-├ 🎫 Покупка проходок
-├ 📈 Прокачка рейтинга
-├ 🚇 Услуги Metro Royale
-└ 🎁 Эксклюзивные скины
+<b>🚇 Metro Shop - PUBG Mobile</b>
 
-✨ <b>Преимущества работы с нами:</b>
-├ ⚡ Быстрое выполнение (5-30 мин)
-├ 🛡️ Безопасные сделки
-├ 💯 Гарантия возврата
-├ 🎯 Более 5000 довольных клиентов
-├ 💳 Автоматическая оплата через ЮMoney
+🤩⚡⚡⚡⚡⚡⚡🤩
+🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋
+
+✨ <b>Профессиональные услуги Metro Royale:</b>
+
+🗺️ Карты Metro (5, 7, 8 + VIP)
+🚇 Сопроводы с экипировкой
+⛏️ Эффективный фарм
+🔥 Дополнительные услуги
+
+💎 <b>Наши преимущества:</b>
+├ ⚡ Быстрое выполнение
+├ 🛡️ Опытные игроки
+├ 💯 Гарантия эвакуации
+├ 💰 Честные цены
 └ 💬 Поддержка 24/7
 
-📱 Выберите нужный раздел в меню ниже! 👇
+🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋
+➖➖➖➖➖➖➖➖➖➖➖
+
+📱 Выберите нужную услугу! 👇
+"""
+
+MAPS_TEXT = """
+🤩⚡⚡⚡⚡⚡⚡🤩
+
+<b>🗺️ Карты Metro Royale</b>
+
+➖➖➖➖➖➖➖➖➖➖➖
+
+💜 <b>Карта 5</b> — 200₽
+├ Стандартная карта
+└ Средний лут
+
+👑 <b>Карта 5 VIP</b> — 300₽
+├ VIP версия
+└ Улучшенный лут
+
+💜 <b>Карта 7</b> — 250₽
+├ Стандартная карта
+└ Хороший лут
+
+👑 <b>Карта 7 VIP</b> — 350₽
+├ VIP версия
+└ Отличный лут
+
+💜 <b>Карта 8</b> — 300₽
+├ Стандартная карта
+└ Лучший лут
+
+👑 <b>Карта 8 VIP</b> — 400₽
+├ VIP версия
+└ Максимальный лут
+
+➖➖➖➖➖➖➖➖➖➖➖
+🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋
+
+<i>Выберите нужную карту</i> 👇
+"""
+
+ESCORTS_TEXT = """
+🤩⚡⚡⚡⚡⚡⚡🤩
+
+<b>🚇 Сопроводы с экипировкой</b>
+
+🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋
+➖➖➖➖➖➖➖➖➖➖➖
+
+🤗 <b>Сопровод 80₽</b>
+├ Входит: 🪖 🧥 🎒
+├ Опытный игрок
+└ Гарантия эвакуации
+
+🤗 <b>Сопровод 100₽</b>
+├ Входит: 🪖 🧥 🎒
+├ Профессиональная помощь
+└ Безопасный проход
+
+🤗 <b>Сопровод 120₽</b>
+├ Входит: 🪖 🧥 🎒
+├ Премиум сопровождение
+└ Максимум лута
+
+➖➖➖➖➖➖➖➖➖➖➖
+🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋
+
+<i>Выберите нужный сопровод</i> 👇
+"""
+
+FARM_TEXT = """
+🤩⚡⚡⚡⚡⚡⚡🤩
+
+<b>⛏️ Фарм услуги Metro Royale</b>
+
+➖➖➖➖➖➖➖➖➖➖➖
+
+⛏️ <b>Фарм 5 игр</b> — 400₽
+├ 5 успешных рейдов
+├ Максимум добычи
+├ Безопасная эвакуация
+└ Делёжка лута 50/50
+
+⛏️ <b>Фарм 10 игр</b> — 750₽
+├ 10 успешных рейдов
+├ Эффективный фарм
+├ Гарантия результата
+└ Делёжка лута 50/50
+
+💎 <b>Что вы получите:</b>
+├ Ценные предметы
+├ Игровая валюта
+├ Экипировка
+└ Опыт прохождения
+
+➖➖➖➖➖➖➖➖➖➖➖
+🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋
+
+<i>Выберите пакет фарма</i> 👇
+"""
+
+EXTRA_TEXT = """
+🤩⚡⚡⚡⚡⚡⚡🤩
+
+<b>🔥 Дополнительные услуги</b>
+
+➖➖➖➖➖➖➖➖➖➖➖
+
+🔥 <b>МК вышка</b> — 30₽
+├ Быстрое выполнение
+├ Профессиональная помощь
+└ Гарантия результата
+
+➖➖➖➖➖➖➖➖➖➖➖
+🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋
+
+<i>Выберите услугу</i> 👇
 """
 
 ABOUT_TEXT = """
-ℹ️ <b>О Metro Shop</b>
+🤩⚡⚡⚡⚡⚡⚡🤩
 
-🏪 <b>Metro Shop</b> — профессиональный сервис для PUBG Mobile
+<b>ℹ️ О Metro Shop</b>
 
-🚇 <b>Metro Royale</b> — PvE/PvP режим:
-├ 🗺️ Исследование локаций
-├ 💼 Сбор ценного лута
-├ ⚔️ Сражения с ботами и игроками
-├ 🚁 Эвакуация с добычей
-└ 💰 Продажа предметов
+➖➖➖➖➖➖➖➖➖➖➖
+
+🏪 <b>Metro Shop</b> — профессиональный сервис для Metro Royale
+
+🚇 <b>Metro Royale</b> — это:
+├ 🗺️ Уникальные карты
+├ 💼 Ценный лут
+├ ⚔️ Опасные зоны
+├ 🚁 Эвакуация
+└ 💰 Награды
 
 ✅ <b>Наши гарантии:</b>
 ├ 🔐 Безопасность аккаунта
-├ ⚡ Быстрое выполнение
+├ ⚡ Опытные игроки
 ├ 💬 Поддержка 24/7
 ├ 💸 Честные цены
 └ 🔄 Возврат при проблемах
 
 📊 <b>Статистика:</b>
-├ 👥 5000+ клиентов
-├ ⭐ Рейтинг 4.9/5.0
-└ 📈 Работаем с 2020 года
+├ 👥 3000+ клиентов
+├ ⭐ Рейтинг 4.9/5
+└ 📈 Работаем с 2021 года
+
+➖➖➖➖➖➖➖➖➖➖➖
+🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋
 """
 
 FAQ_TEXT = """
-❓ <b>Частые вопросы (FAQ)</b>
+🤩⚡⚡⚡⚡⚡⚡🤩
 
-<b>Q: Безопасно ли передавать данные аккаунта?</b>
-A: ✅ Да! Мы не сохраняем ваши данные. 5000+ заказов без банов.
+<b>❓ Частые вопросы (FAQ)</b>
 
-<b>Q: Сколько времени занимает пополнение UC?</b>
-A: ⚡ 5-30 минут после оплаты.
-
-<b>Q: Какие способы оплаты?</b>
-A: 💳 ЮMoney с автопроверкой платежа.
-
-<b>Q: Что если UC не пришли?</b>
-A: 📞 Свяжитесь с поддержкой — решим за 1 час.
-
-<b>Q: Могут ли забанить?</b>
-A: 🛡️ Нет! Используем официальные методы.
-
-<b>Q: Стоимость прокачки?</b>
-A: 📊 От 500₽ в зависимости от ранга.
+➖➖➖➖➖➖➖➖➖➖➖
 
 <b>Q: Что такое Metro Royale?</b>
-A: 🚇 PvE/PvP режим для фарма ценностей.
+A: 🚇 Это PvE/PvP режим в PUBG Mobile где нужно собирать лут и эвакуироваться.
 
-<b>Q: Есть гарантия возврата?</b>
-A: 💯 Да! Полный возврат при проблемах.
+<b>Q: Что входит в сопровод?</b>
+A: 🪖🧥🎒 Экипировка + опытный игрок, который поможет выжить и эвакуироваться.
+
+<b>Q: Как делится лут?</b>
+A: 💎 При фарме лут делится 50/50, при сопроводе всё ваше.
+
+<b>Q: Сколько времени занимает?</b>
+A: ⏱️ Одна игра 10-20 минут, фарм-пакет за 2-4 часа.
+
+<b>Q: Безопасно ли?</b>
+A: 🛡️ Да! Мы не запрашиваем пароль, играем с вашего аккаунта или по приглашению.
+
+<b>Q: Способы оплаты?</b>
+A: 💳 ЮMoney с автоматической проверкой платежа.
+
+<b>Q: Гарантия возврата?</b>
+A: 💯 Да! Полный возврат если услуга не выполнена.
+
+➖➖➖➖➖➖➖➖➖➖➖
+🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋
 """
 
 SUPPORT_TEXT = """
-💬 <b>Служба поддержки</b>
+🤩⚡⚡⚡⚡⚡⚡🤩
+
+<b>💬 Служба поддержки</b>
+
+➖➖➖➖➖➖➖➖➖➖➖
 
 👨‍💼 <b>Операторы онлайн 24/7!</b>
 
@@ -484,15 +555,17 @@ SUPPORT_TEXT = """
 ├ 📧 Email: support@metroshop.ru
 └ ⚡ Ответ до 15 минут
 
-❓ <b>Вопросы:</b>
+❓ <b>По каким вопросам:</b>
 ├ 💰 Проблемы с оплатой
 ├ ⏱️ Статус заказа
 ├ 🔧 Техподдержка
 ├ 💎 Консультации
 └ 📝 Жалобы и предложения
+
+➖➖➖➖➖➖➖➖➖➖➖
+🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋
 """
 
-# Хранилище для временных данных
 user_data_storage = {}
 
 # ======================== ОБРАБОТЧИКИ ========================
@@ -500,16 +573,13 @@ user_data_storage = {}
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     await add_user(user.id, user.username, user.first_name)
-    
-    await update.message.reply_text(
-        WELCOME_TEXT,
-        reply_markup=get_main_menu(),
-        parse_mode=ParseMode.HTML
-    )
+    await update.message.reply_text(WELCOME_TEXT, reply_markup=get_main_menu(), parse_mode=ParseMode.HTML)
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = """
-🆘 <b>Помощь по боту Metro Shop</b>
+🤩⚡⚡⚡⚡⚡⚡🤩
+
+<b>🆘 Помощь по боту</b>
 
 📱 <b>Команды:</b>
 ├ /start — Главное меню
@@ -518,15 +588,13 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 └ /stats — Статистика (admin)
 
 🛍️ <b>Как заказать:</b>
-1️⃣ Выберите раздел
-2️⃣ Выберите товар
-3️⃣ Введите PUBG ID
-4️⃣ Оплатите через ЮMoney
-5️⃣ Проверьте оплату в боте
-6️⃣ Получите заказ!
+1️⃣ Выберите услугу
+2️⃣ Введите PUBG ID
+3️⃣ Оплатите через ЮMoney
+4️⃣ Проверьте оплату
+5️⃣ Получите услугу!
 
 💬 Поддержка: @MetroShopSupport
-⚡ Работаем 24/7!
 """
     await update.message.reply_text(text, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
 
@@ -535,56 +603,67 @@ async def orders_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     orders = await get_user_orders(user_id, 10)
     
     if not orders:
-        text = "💼 <b>Мои заказы</b>\n\n📭 У вас пока нет заказов."
+        text = """
+🤩⚡⚡⚡⚡⚡⚡🤩
+
+<b>💼 Мои заказы</b>
+
+➖➖➖➖➖➖➖➖➖➖➖
+
+📭 У вас пока нет заказов.
+
+Оформите первый заказ! 🎮
+
+➖➖➖➖➖➖➖➖➖➖➖
+"""
     else:
-        text = "💼 <b>Ваши последние заказы:</b>\n\n"
+        text = """
+🤩⚡⚡⚡⚡⚡⚡🤩
+
+<b>💼 Ваши заказы:</b>
+
+➖➖➖➖➖➖➖➖➖➖➖
+
+"""
         for order in orders:
             status_emoji = {
                 'awaiting_payment': '⏳',
                 'paid': '✅',
-                'processing': '🔄',
                 'completed': '✅',
                 'cancelled': '❌'
             }.get(order['status'], '❓')
-            
-            status_text = {
-                'awaiting_payment': 'Ожидает оплаты',
-                'paid': 'Оплачен, в работе',
-                'processing': 'В работе',
-                'completed': 'Выполнен',
-                'cancelled': 'Отменен'
-            }.get(order['status'], 'Неизвестно')
             
             text += f"""
 🔖 <b>#{order['order_id']}</b>
 ├ 📦 {order['item_name']}
 ├ 💰 {order['price']}₽
-├ 📊 {status_emoji} {status_text}
-└ 📅 {order['created_at'][:16]}
+└ 📊 {status_emoji}
 
 """
+        text += "➖➖➖➖➖➖➖➖➖➖➖"
     
     await update.message.reply_text(text, parse_mode=ParseMode.HTML, reply_markup=get_main_menu())
 
 async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id not in ADMIN_IDS:
-        await update.message.reply_text("❌ Команда только для администраторов")
         return
     
     stats = await get_stats()
-    
     text = f"""
-📊 <b>Статистика Metro Shop</b>
+🤩⚡⚡⚡⚡⚡⚡🤩
 
-👥 <b>Пользователи:</b> {stats['total_users']}
-📦 <b>Всего заказов:</b> {stats['total_orders']}
-✅ <b>Выполнено:</b> {stats['completed_orders']}
-💰 <b>Общая выручка:</b> {stats['total_revenue']:.2f}₽
-📅 <b>Заказов сегодня:</b> {stats['today_orders']}
+<b>📊 Статистика Metro Shop</b>
 
-📈 <b>Средний чек:</b> {(stats['total_revenue'] / stats['completed_orders'] if stats['completed_orders'] > 0 else 0):.2f}₽
+➖➖➖➖➖➖➖➖➖➖➖
+
+👥 Пользователи: {stats['total_users']}
+📦 Всего заказов: {stats['total_orders']}
+✅ Выполнено: {stats['completed_orders']}
+💰 Выручка: {stats['total_revenue']:.2f}₽
+📅 Сегодня: {stats['today_orders']}
+
+➖➖➖➖➖➖➖➖➖➖➖
 """
-    
     await update.message.reply_text(text, parse_mode=ParseMode.HTML)
 
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -594,147 +673,78 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = query.data
     user_id = query.from_user.id
     
-    # Главное меню
     if data == "main_menu":
-        await query.edit_message_text(
-            WELCOME_TEXT,
-            reply_markup=get_main_menu(),
-            parse_mode=ParseMode.HTML
-        )
+        await query.edit_message_text(WELCOME_TEXT, reply_markup=get_main_menu(), parse_mode=ParseMode.HTML)
     
-    # Покупка UC
-    elif data == "buy_uc":
-        text = """
-💎 <b>Пополнение UC (Unknown Cash)</b>
-
-Выберите нужное количество UC:
-
-⚡ <b>Скорость:</b> 5-30 минут
-🛡️ <b>Безопасность:</b> 100% гарантия
-💯 <b>Способ:</b> Официальное пополнение
-💳 <b>Оплата:</b> ЮMoney (автопроверка)
-
-<i>Нажмите на нужный пакет</i> 👇
-"""
-        await query.edit_message_text(text, reply_markup=get_uc_menu(), parse_mode=ParseMode.HTML)
+    elif data == "metro_maps":
+        await query.edit_message_text(MAPS_TEXT, reply_markup=get_maps_menu(), parse_mode=ParseMode.HTML)
     
-    # Покупка проходок
-    elif data == "buy_passes":
-        text = """
-🎫 <b>Покупка Royale Pass</b>
-
-📅 Доступные проходки текущего сезона:
-
-🎫 <b>Royale Pass</b>
-├ ✨ Базовая версия
-└ ⏱️ Мгновенная активация
-
-👑 <b>Elite Pass Plus</b>
-├ 💎 Премиум версия
-├ ⚡ +25 уровней сразу
-└ ⏱️ Мгновенная активация
-"""
-        await query.edit_message_text(text, reply_markup=get_passes_menu(), parse_mode=ParseMode.HTML)
+    elif data == "escorts":
+        await query.edit_message_text(ESCORTS_TEXT, reply_markup=get_escorts_menu(), parse_mode=ParseMode.HTML)
     
-    # Прокачка рейтинга
-    elif data == "boost_rank":
-        text = """
-📈 <b>Прокачка рейтинга PUBG Mobile</b>
-
-🎮 <b>Условия:</b>
-├ 👨‍💼 Профессиональные бустеры
-├ ⚡ Срок: 1-7 дней
-├ 🛡️ Без читов
-├ 🎯 K/D сохраняется
-└ 💯 Гарантия результата
-
-<i>Выберите желаемый ранг</i> 👇
-"""
-        await query.edit_message_text(text, reply_markup=get_boost_menu(), parse_mode=ParseMode.HTML)
+    elif data == "farm_services":
+        await query.edit_message_text(FARM_TEXT, reply_markup=get_farm_menu(), parse_mode=ParseMode.HTML)
     
-    # Metro Royale
-    elif data == "metro_services":
-        text = """
-🚇 <b>Услуги Metro Royale</b>
-
-🗺️ <b>О режиме:</b>
-├ 🎯 PvE/PvP выживание
-├ 💼 Сбор лута
-├ ⚔️ Сражения
-├ 🚁 Эвакуация
-└ 💰 Продажа предметов
-
-✨ <b>Наши услуги:</b>
-
-🚇 <b>Сопровождение (1 игра)</b>
-├ Опытный игрок
-├ Гарантия эвакуации
-└ Делёжка 50/50
-
-⛏️ <b>Фарм (5 игр)</b>
-├ Эффективный фарм
-├ Максимум добычи
-└ Безопасность
-"""
-        await query.edit_message_text(text, reply_markup=get_metro_menu(), parse_mode=ParseMode.HTML)
+    elif data == "extra_services":
+        await query.edit_message_text(EXTRA_TEXT, reply_markup=get_extra_menu(), parse_mode=ParseMode.HTML)
     
-    # О магазине
     elif data == "about":
         await query.edit_message_text(ABOUT_TEXT, reply_markup=get_back_button(), parse_mode=ParseMode.HTML)
     
-    # FAQ
     elif data == "faq":
         await query.edit_message_text(FAQ_TEXT, reply_markup=get_back_button(), parse_mode=ParseMode.HTML)
     
-    # Поддержка
     elif data == "support":
         keyboard = [
-            [InlineKeyboardButton("💬 Написать оператору", url="https://t.me/MetroShopSupport")],
+            [InlineKeyboardButton("💬 Написать", url="https://t.me/MetroShopSupport")],
             [InlineKeyboardButton("🔙 Назад", callback_data="main_menu")]
         ]
-        await query.edit_message_text(
-            SUPPORT_TEXT,
-            reply_markup=InlineKeyboardMarkup(keyboard),
-            parse_mode=ParseMode.HTML
-        )
+        await query.edit_message_text(SUPPORT_TEXT, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.HTML)
     
-    # Мои заказы
     elif data == "my_orders":
         orders = await get_user_orders(user_id, 5)
-        
         if not orders:
-            text = "💼 <b>Мои заказы</b>\n\n📭 У вас пока нет заказов."
+            text = """
+🤩⚡⚡⚡⚡⚡⚡🤩
+
+<b>💼 Мои заказы</b>
+
+➖➖➖➖➖➖➖➖➖➖➖
+
+📭 У вас пока нет заказов.
+
+➖➖➖➖➖➖➖➖➖➖➖
+"""
         else:
-            text = "💼 <b>Ваши последние заказы:</b>\n\n"
-            for order in orders:
-                status_emoji = {
-                    'awaiting_payment': '⏳',
-                    'paid': '✅',
-                    'processing': '🔄',
-                    'completed': '✅',
-                    'cancelled': '❌'
-                }.get(order['status'], '❓')
-                
-                text += f"""
-🔖 <b>#{order['order_id']}</b>
-├ 📦 {order['item_name']}
-├ 💰 {order['price']}₽
-└ 📊 {status_emoji} {order['status']}
+            text = """
+🤩⚡⚡⚡⚡⚡⚡🤩
+
+<b>💼 Ваши заказы:</b>
+
+➖➖➖➖➖➖➖➖➖➖➖
 
 """
+            for order in orders:
+                text += f"🔖 #{order['order_id']}\n├ {order['item_name']}\n└ {order['price']}₽\n\n"
+            text += "➖➖➖➖➖➖➖➖➖➖➖"
         
         await query.edit_message_text(text, parse_mode=ParseMode.HTML, reply_markup=get_back_button())
     
-    # Выбор товара
     elif data in PRICES:
         item = PRICES[data]
         user_data_storage[user_id] = {'item_key': data}
         
+        includes_text = f"\n├ Входит: {item['includes']}" if 'includes' in item else ""
+        
         text = f"""
-{item['emoji']} <b>Подтверждение заказа</b>
+🤩⚡⚡⚡⚡⚡⚡🤩
 
-📦 <b>Товар:</b> {item['name']}
-💰 <b>Цена:</b> {item['price']}₽
+<b>{item['emoji']} Подтверждение заказа</b>
+
+➖➖➖➖➖➖➖➖➖➖➖
+
+📦 <b>Услуга:</b> {item['name']}
+💰 <b>Цена:</b> {item['price']}₽{includes_text}
 
 ⚠️ <b>ВАЖНО: Введите ваш PUBG ID</b>
 
@@ -746,6 +756,8 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 3. ID под ником
 
 <i>Пример: 5123456789</i>
+
+➖➖➖➖➖➖➖➖➖➖➖
 """
         
         await query.edit_message_text(
@@ -754,22 +766,16 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("❌ Отменить", callback_data="main_menu")]])
         )
     
-    # Проверка оплаты
     elif data.startswith('check_payment_'):
         order_id = data.replace('check_payment_', '')
         order = await get_order(order_id)
         
-        if not order:
-            await query.answer("❌ Заказ не найден", show_alert=True)
-            return
-        
-        if order['status'] != 'awaiting_payment':
-            await query.answer(f"ℹ️ Статус: {order['status']}", show_alert=True)
+        if not order or order['status'] != 'awaiting_payment':
+            await query.answer("❌ Ошибка заказа", show_alert=True)
             return
         
         await query.answer("🔄 Проверяю платеж...", show_alert=False)
         
-        # Проверяем платеж через API
         if yoomoney:
             is_paid, amount = yoomoney.check_payment(order['payment_label'], order['price'])
             
@@ -778,20 +784,27 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update_user_stats(user_id, order['price'])
                 
                 text = f"""
-✅ <b>Платеж получен!</b>
+🤩⚡⚡⚡⚡⚡⚡🤩
 
-🎉 Заказ #{order_id} успешно оплачен!
+<b>✅ Платеж получен!</b>
 
-📦 <b>Товар:</b> {order['item_name']}
+➖➖➖➖➖➖➖➖➖➖➖
+
+🎉 Заказ #{order_id} оплачен!
+
+📦 <b>Услуга:</b> {order['item_name']}
 💰 <b>Сумма:</b> {amount}₽
 🆔 <b>PUBG ID:</b> {order['pubg_id']}
 
-⏳ <b>Статус:</b> Передан в обработку
+⏳ <b>Статус:</b> В обработке
 
-Ваш заказ будет выполнен в течение 5-30 минут!
-Мы отправим уведомление когда товар будет доставлен.
+Услуга будет выполнена в течение 10-30 минут!
+Мы уведомим вас когда всё будет готово.
 
 💬 Вопросы: @MetroShopSupport
+
+➖➖➖➖➖➖➖➖➖➖➖
+🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋
 """
                 
                 await query.edit_message_text(text, parse_mode=ParseMode.HTML, reply_markup=get_back_button())
@@ -803,42 +816,45 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 🔔 <b>Новый оплаченный заказ!</b>
 
 📦 Заказ: #{order_id}
-👤 @{order['username'] or 'нет username'}
+👤 @{order['username'] or 'нет'}
 🆔 User ID: {user_id}
-💎 Товар: {order['item_name']}
+💎 Услуга: {order['item_name']}
 💰 Сумма: {order['price']}₽
 🎮 PUBG ID: {order['pubg_id']}
 
 ⚡ Требуется выполнение!
 """
                         await context.bot.send_message(
-                            chat_id=admin_id,
-                            text=admin_text,
+                            admin_id,
+                            admin_text,
                             parse_mode=ParseMode.HTML,
                             reply_markup=get_admin_order_menu(order_id)
                         )
                     except Exception as e:
                         logger.error(f"Ошибка отправки админу: {e}")
             else:
-                await query.answer("⏳ Платеж еще не получен. Попробуйте через минуту.", show_alert=True)
+                await query.answer("⏳ Платеж не найден. Попробуйте через минуту.", show_alert=True)
         else:
-            await query.answer("❌ API ЮMoney недоступен", show_alert=True)
+            await query.answer("❌ API недоступен", show_alert=True)
     
-    # Отмена заказа
     elif data.startswith('cancel_order_'):
         order_id = data.replace('cancel_order_', '')
         await update_order_status(order_id, 'cancelled')
         
         await query.edit_message_text(
-            "❌ <b>Заказ отменен</b>",
+            """
+🤩⚡⚡⚡⚡⚡⚡🤩
+
+<b>❌ Заказ отменен</b>
+
+➖➖➖➖➖➖➖➖➖➖➖
+""",
             reply_markup=get_main_menu(),
             parse_mode=ParseMode.HTML
         )
     
-    # Админ - заказ выполнен
     elif data.startswith('admin_complete_'):
         if user_id not in ADMIN_IDS:
-            await query.answer("❌ Только для админов", show_alert=True)
             return
         
         order_id = data.replace('admin_complete_', '')
@@ -848,21 +864,27 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update_order_status(order_id, 'completed')
             await query.edit_message_text(f"✅ Заказ #{order_id} выполнен и закрыт!")
             
-            # Уведомляем клиента
             try:
                 await context.bot.send_message(
-                    chat_id=order['user_id'],
-                    text=f"""
-🎉 <b>Заказ выполнен!</b>
+                    order['user_id'],
+                    f"""
+🤩⚡⚡⚡⚡⚡⚡🤩
+
+<b>🎉 Заказ выполнен!</b>
+
+➖➖➖➖➖➖➖➖➖➖➖
 
 Ваш заказ #{order_id} успешно выполнен!
 
-📦 <b>Товар:</b> {order['item_name']}
+📦 <b>Услуга:</b> {order['item_name']}
 🎮 <b>PUBG ID:</b> {order['pubg_id']}
 
-Проверьте ваш аккаунт PUBG Mobile!
+Проверьте игру!
 
 ⭐ Спасибо за покупку! Будем рады видеть вас снова!
+
+➖➖➖➖➖➖➖➖➖➖➖
+🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋
 """,
                     parse_mode=ParseMode.HTML
                 )
@@ -879,7 +901,19 @@ async def handle_pubg_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if not pubg_id.isdigit() or len(pubg_id) < 8:
         await update.message.reply_text(
-            "❌ <b>Неверный формат PUBG ID</b>\n\nID должен состоять из цифр (минимум 8).\n\n<i>Пример: 5123456789</i>",
+            """
+🤩⚡⚡⚡⚡⚡⚡🤩
+
+<b>❌ Неверный формат PUBG ID</b>
+
+➖➖➖➖➖➖➖➖➖➖➖
+
+ID должен состоять из цифр (минимум 8).
+
+<i>Пример: 5123456789</i>
+
+➖➖➖➖➖➖➖➖➖➖➖
+""",
             parse_mode=ParseMode.HTML
         )
         return
@@ -898,26 +932,23 @@ async def handle_pubg_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     del user_data_storage[user_id]
     
-    # Генерируем ссылку для оплаты
-    if yoomoney:
-        payment_url = yoomoney.create_payment_form_url(
-            receiver=YOOMONEY_WALLET,
-            amount=item['price'],
-            label=payment_label,
-            comment=f"Metro Shop - {item['name']}"
-        )
-    else:
-        payment_url = f"https://yoomoney.ru/to/{YOOMONEY_WALLET}"
+    payment_url = yoomoney.create_payment_url(
+        YOOMONEY_WALLET,
+        item['price'],
+        payment_label,
+        f"Metro Shop - {item['name']}"
+    ) if yoomoney else f"https://yoomoney.ru/to/{YOOMONEY_WALLET}"
     
     text = f"""
-💳 <b>Оплата заказа #{order_id}</b>
+🤩⚡⚡⚡⚡⚡⚡🤩
 
-📦 <b>Товар:</b> {item['name']}
+<b>💳 Оплата заказа #{order_id}</b>
+
+➖➖➖➖➖➖➖➖➖➖➖
+
+📦 <b>Услуга:</b> {item['name']}
 🆔 <b>PUBG ID:</b> {pubg_id}
 💰 <b>К оплате:</b> {item['price']}₽
-
-🔗 <b>Ссылка для оплаты:</b>
-<a href="{payment_url}">Оплатить через ЮMoney</a>
 
 🏷️ <b>Метка платежа (обязательно!):</b>
 <code>{payment_label}</code>
@@ -926,13 +957,16 @@ async def handle_pubg_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
 1️⃣ Перейдите по ссылке
 2️⃣ Выберите способ оплаты
 3️⃣ Оплатите {item['price']}₽
-4️⃣ В комментарии укажите: <code>{payment_label}</code>
-5️⃣ Вернитесь и нажмите "Проверить оплату"
+4️⃣ В комментарии: <code>{payment_label}</code>
+5️⃣ Нажмите "Проверить оплату"
 
-⚠️ <b>ВАЖНО:</b> Обязательно укажите метку платежа!
+⚠️ <b>ВАЖНО:</b> Обязательно укажите метку!
 
-⏰ Платеж проверяется автоматически (10-30 сек)
+⏰ Платеж проверяется автоматически
 🕐 Заказ действителен 24 часа
+
+➖➖➖➖➖➖➖➖➖➖➖
+🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋
 """
     
     keyboard = [
@@ -948,77 +982,9 @@ async def handle_pubg_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
         disable_web_page_preview=True
     )
 
-async def check_pending_payments(context: ContextTypes.DEFAULT_TYPE):
-    """Периодическая проверка ожидающих платежей"""
-    if not yoomoney:
-        return
-    
-    pending_orders = await get_pending_orders()
-    
-    for order in pending_orders:
-        is_paid, amount = yoomoney.check_payment(order['payment_label'], order['price'])
-        
-        if is_paid:
-            await update_order_status(order['order_id'], 'paid')
-            await update_user_stats(order['user_id'], order['price'])
-            
-            # Уведомляем пользователя
-            try:
-                text = f"""
-✅ <b>Платеж получен!</b>
-
-🎉 Ваш заказ #{order['order_id']} успешно оплачен!
-
-📦 <b>Товар:</b> {order['item_name']}
-💰 <b>Сумма:</b> {amount}₽
-
-⏳ <b>Статус:</b> Передан в обработку
-
-Ваш заказ будет выполнен в течение 5-30 минут!
-"""
-                await context.bot.send_message(
-                    chat_id=order['user_id'],
-                    text=text,
-                    parse_mode=ParseMode.HTML
-                )
-            except:
-                pass
-            
-            # Уведомляем админов
-            for admin_id in ADMIN_IDS:
-                try:
-                    admin_text = f"""
-🔔 <b>Новый оплаченный заказ!</b>
-
-📦 Заказ: #{order['order_id']}
-👤 @{order['username'] or 'нет'}
-🆔 User ID: {order['user_id']}
-💎 Товар: {order['item_name']}
-💰 Сумма: {order['price']}₽
-🎮 PUBG ID: {order['pubg_id']}
-
-⚡ Требуется выполнение!
-"""
-                    await context.bot.send_message(
-                        chat_id=admin_id,
-                        text=admin_text,
-                        parse_mode=ParseMode.HTML,
-                        reply_markup=get_admin_order_menu(order['order_id'])
-                    )
-                except:
-                    pass
-
 async def post_init(application: Application):
     await init_db()
     logger.info("✅ База данных инициализирована")
-    
-    if yoomoney:
-        # Запускаем автопроверку каждые 30 секунд
-        job_queue = application.job_queue
-        job_queue.run_repeating(check_pending_payments, interval=30, first=10)
-        logger.info("✅ Автопроверка платежей запущена")
-    else:
-        logger.warning("⚠️ YooMoney API недоступен - автопроверка отключена")
 
 def main():
     app = Application.builder().token(BOT_TOKEN).post_init(post_init).build()
@@ -1027,14 +993,13 @@ def main():
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("orders", orders_command))
     app.add_handler(CommandHandler("stats", stats_command))
-    
     app.add_handler(CallbackQueryHandler(button_callback))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_pubg_id))
     
     logger.info("🚀 Metro Shop Bot запущен!")
     logger.info(f"💳 ЮMoney: {YOOMONEY_WALLET}")
     logger.info(f"👨‍💼 Админы: {ADMIN_IDS}")
-    logger.info(f"🔌 API: {'✅ Подключен' if yoomoney else '❌ Отключен'}")
+    logger.info(f"🔌 API: {'✅' if yoomoney else '❌'}")
     
     app.run_polling(allowed_updates=["message", "callback_query"])
 
