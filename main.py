@@ -1,4 +1,4 @@
-# bot.py (финальная исправленная версия для Webhook)
+# bot.py (финальная версия, режим Polling + Web App)
 
 import logging
 import os
@@ -26,7 +26,6 @@ from telegram.constants import ParseMode
 
 # --- ВЕСЬ КОД ДО ФУНКЦИИ main() ОСТАЕТСЯ БЕЗ ИЗМЕНЕНИЙ ---
 # ... (вставьте сюда весь код из предыдущего ответа, от начала и до функции main)
-
 # Загрузка переменных окружения
 load_dotenv()
 
@@ -45,7 +44,6 @@ YOOMONEY_TOKEN = os.getenv('YOOMONEY_ACCESS_TOKEN')
 YOOMONEY_WALLET = os.getenv('YOOMONEY_WALLET')
 DOMAIN = "wixyezmetroshop.bothost.ru"
 PORT = int(os.getenv('PORT', 8080))
-WEBHOOK_URL_PATH = f"/{BOT_TOKEN}"
 
 # База данных
 DB_NAME = 'metro_shop.db'
@@ -1922,26 +1920,12 @@ async def handle_webapp_data(update: Update, context: ContextTypes.DEFAULT_TYPE)
 # ======================== ЗАПУСК БОТА (ИЗМЕНЕННАЯ ЧАСТЬ) ========================
 
 async def main() -> None:
-    """Запускает бота и объединенный веб-сервер."""
+    """Запускает бота в режиме опроса (polling) и параллельно веб-сервер aiohttp."""
 
-    # 1. Создаем приложение aiohttp для Mini App и API
-    web_app = web.Application()
-    web_app.add_routes([
-        web.get("/webapp", web_app_handler),
-        web.get("/api/services", api_services_handler),
-        web.post("/api/check-promo", api_check_promo_handler),
-    ])
-
-    # 2. Создаем приложение PTB, передавая ему наше web.Application
-    # Это ключевой момент для объединения серверов
-    ptb_app = (
-        Application.builder()
-        .token(BOT_TOKEN)
-        .web_app(web_app)
-        .build()
-    )
+    # 1. Создаем приложение PTB
+    ptb_app = Application.builder().token(BOT_TOKEN).build()
     
-    # 3. Добавляем все хендлеры
+    # 2. Добавляем все хендлеры
     ptb_app.add_handler(CommandHandler("start", start_command))
     ptb_app.add_handler(CommandHandler("help", help_command))
     ptb_app.add_handler(CommandHandler("profile", profile_command))
@@ -1950,38 +1934,44 @@ async def main() -> None:
     ptb_app.add_handler(CallbackQueryHandler(button_callback))
     ptb_app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, handle_webapp_data))
 
-    # 4. Инициализируем БД и запускаем все вместе
+    # 3. Создаем веб-приложение aiohttp для Mini App
+    web_app = web.Application()
+    web_app.add_routes([
+        web.get("/webapp", web_app_handler),
+        web.get("/api/services", api_services_handler),
+        web.post("/api/check-promo", api_check_promo_handler),
+    ])
+    runner = web.AppRunner(web_app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', PORT)
+
+    # 4. Используем менеджер контекста для PTB
     async with ptb_app:
+        # Инициализируем БД
         await init_db()
         
-        logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━")
-        logger.info("🚀 Metro Shop Bot запускается в режиме Webhook!")
-        logger.info(f"🌐 Домен: {DOMAIN}")
-        logger.info(f"🔌 Порт: {PORT}")
-        logger.info(f"💳 ЮMoney: {YOOMONEY_WALLET}")
-        logger.info(f"👨‍💼 Админы: {ADMIN_IDS}")
-        logger.info(f"🔌 API: {'✅ Подключен' if yoomoney else '❌ Отключен'}")
-        logger.info("━━━━━━━━━━━━━━━━━━━━━")
-        
+        # Удаляем старый вебхук, если он был, чтобы перейти на polling
+        await ptb_app.bot.delete_webhook()
+
+        # Запускаем PTB в режиме polling
         await ptb_app.start()
-        await ptb_app.bot.set_webhook(
-            url=f"https://{DOMAIN}{WEBHOOK_URL_PATH}",
-            allowed_updates=Update.ALL_TYPES,
-        )
+        await ptb_app.updater.start_polling(allowed_updates=Update.ALL_TYPES)
         
-        # Этот код нужен, чтобы приложение не закрывалось сразу
-        # Оно будет работать, пока его не остановят принудительно
-        runner = web.AppRunner(web_app)
-        await runner.setup()
-        site = web.TCPSite(runner, host="0.0.0.0", port=PORT)
+        # Параллельно запускаем наш веб-сервер
         await site.start()
         
-        # Бесконечный цикл, чтобы приложение не закрылось
+        logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━")
+        logger.info("🚀 Бот запущен в режиме POLLING.")
+        logger.info(f"🌐 Web App доступен по адресу: https://{DOMAIN}/webapp")
+        logger.info(f"🔌 Веб-сервер слушает порт: {PORT}")
+        logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+        # Держим приложение в рабочем состоянии
         await asyncio.Event().wait()
         
-        # Код для корректной остановки
+        # Корректно останавливаем все при завершении
+        await ptb_app.updater.stop()
         await ptb_app.stop()
-        await site.stop()
         await runner.cleanup()
 
 
