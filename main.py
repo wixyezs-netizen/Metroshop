@@ -897,14 +897,17 @@ async def use_promocode(code: str):
 # ======================== WEB SERVER ========================
 
 async def web_app_handler(request):
-    return web.Response(text=WEBAPP_HTML, content_type='text/html')
+    logger.info(f"📱 Web App запрос: {request.path} от {request.remote}")
+    return web.Response(text=WEBAPP_HTML, content_type='text/html; charset=utf-8')
 
 async def api_services_handler(request):
+    logger.info(f"📡 API запрос /api/services")
     return web.json_response(PRICES)
 
 async def api_check_promo_handler(request):
     data = await request.json()
     code = data.get('code', '')
+    logger.info(f"🎁 Проверка промокода: {code}")
     
     promo = await check_promocode(code)
     
@@ -913,17 +916,30 @@ async def api_check_promo_handler(request):
     else:
         return web.json_response({'valid': False, 'message': 'Промокод не найден или истек'})
 
+# Добавляем обработчик для всех путей
+async def catch_all_handler(request):
+    logger.info(f"🌐 Запрос: {request.path}")
+    # Перенаправляем все на главную
+    return web.Response(text=WEBAPP_HTML, content_type='text/html; charset=utf-8')
+
 async def start_web_server():
     app = web.Application()
+    
+    # Основные роуты
     app.router.add_get('/', web_app_handler)
+    app.router.add_get('/index.html', web_app_handler)
     app.router.add_get('/api/services', api_services_handler)
     app.router.add_post('/api/check-promo', api_check_promo_handler)
+    
+    # Catch-all для всех остальных путей
+    app.router.add_route('*', '/{tail:.*}', catch_all_handler)
     
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, '0.0.0.0', PORT)
     await site.start()
-    logger.info(f"🌐 Web server started on port {PORT}")
+    logger.info(f"🌐 Web server запущен на http://0.0.0.0:{PORT}")
+    logger.info(f"📱 Web App доступен: https://{DOMAIN}")
 
 # ======================== КЛАВИАТУРЫ ========================
 
